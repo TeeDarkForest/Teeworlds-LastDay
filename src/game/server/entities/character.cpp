@@ -686,13 +686,14 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 		for(int i=ITEMTYPE_METAL;i <= NUM_ITEMTYPE;i++)
 		{
-			if(m_pPlayer->m_aResource[i].m_Num)
+			if(m_pPlayer->m_aResource[i].m_Num > 0)
 			{
-				new CItem(GameWorld(), i, DiePos, m_pPlayer->m_aWeapons[i].m_Ammo);
+				new CItem(GameWorld(), i, DiePos, m_pPlayer->m_aResource[i].m_Num);
 				m_pPlayer->m_aResource[i].m_Num = 0;
 			}
 		}
-		GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
+		if(Killer != m_pPlayer->GetCID())
+			GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
 		
 	}
 
@@ -729,7 +730,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 	// m_pPlayer only inflicts half damage on self
 	if(From == m_pPlayer->GetCID())
-		Dmg = max(1, Dmg/2);
+		return false;
 
 	m_DamageTaken++;
 
