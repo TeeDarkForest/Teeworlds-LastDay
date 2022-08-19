@@ -1687,7 +1687,7 @@ void CGameContext::ConMake(IConsole::IResult *pResult, void *pUserData)
 			if(str_comp(pResult->GetString(0), pSelf->GetWeaponName(i)) == 0)
 			{
 				int NeedResource = i+1;
-				if(pSelf->m_apPlayers[ClientID]->m_aResource[0].m_Num > NeedResource)
+				if(pSelf->m_apPlayers[ClientID]->m_aResource[0].m_Num >= NeedResource)
 				{
 					pSelf->SendChatTarget(ClientID, _("You make '{str:itemName}'"), 
 						"itemName", pSelf->Server()->Localization()->Localize(pLanguage, _(pSelf->GetWeaponName(i))), NULL);
