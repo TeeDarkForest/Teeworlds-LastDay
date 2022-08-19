@@ -227,7 +227,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 
 void CGameContext::SendMotd(int To, const char* pText)
 {
-	if(m_apPlayers[To])
+	if(m_apPlayers[To] && !m_apPlayers[To]->IsZomb())
 	{
 		CNetMsg_Sv_Motd Msg;
 		
@@ -252,7 +252,7 @@ void CGameContext::SendChatTarget(int To, const char *pText, ...)
 	
 	for(int i = Start; i < End; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && !m_apPlayers[i]->IsZomb())
 		{
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -346,14 +346,13 @@ void CGameContext::SendBroadcast_VL(const char *pText, int ClientID, ...)
 
 	for(int i = Start; i < End; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && !m_apPlayers[i]->IsZomb())
 		{
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), _(pText), VarArgs);
 			
 			Msg.m_pMessage = Buffer.buffer();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			
 		}
 	}
 	
