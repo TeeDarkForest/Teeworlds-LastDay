@@ -847,6 +847,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, _("You can't kick yourself"));
 					return;
 				}
+				if(m_apPlayers[KickID]->IsZomb())
+				{
+					SendChatTarget(ClientID, _("You can't kick zombies"));
+				}
 
 				if (!Server()->ReverseTranslate(KickID, ClientID))
 					return;
@@ -889,6 +893,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				{
 					SendChatTarget(ClientID, _("You can't move yourself"));
 					return;
+				}
+				if(m_apPlayers[SpectateID]->IsZomb())
+				{
+					SendChatTarget(ClientID, _("You can't move zombies"));
 				}
 				if (!Server()->ReverseTranslate(SpectateID, ClientID))
 					return;

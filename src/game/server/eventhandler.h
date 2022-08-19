@@ -15,8 +15,8 @@ typedef unsigned __int64 uint64_t;
 //
 class CEventHandler
 {
-	static const int MAX_EVENTS = 192;
-	static const int MAX_DATASIZE = 192*64;
+	static const int MAX_EVENTS = 166;
+	static const int MAX_DATASIZE = 166*64;
 
 	int m_aTypes[MAX_EVENTS]; // TODO: remove some of these arrays
 	int m_aOffsets[MAX_EVENTS];

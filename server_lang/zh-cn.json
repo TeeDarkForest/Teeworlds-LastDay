@@ -97,6 +97,10 @@
             "value": "你不能踢出你自己"
         },
         {
+            "key": "You can't kick zombies",
+            "value": "你不能踢出僵尸"
+        },
+        {
             "key": "You can't kick admins",
             "value": "你不能踢出管理员"
         },
@@ -119,6 +123,10 @@
         {
             "key": "You can't move yourself",
             "value": "你不能移动你自己"
+        },
+        {
+            "key": "You can't move zombies",
+            "value": "你不能移动僵尸"  
         },
         {
             "key": "'{str:Player1}' called for vote to move '{str:Player2}' to spectators ({str:R})",
