@@ -11,6 +11,7 @@ class CPickAmmo : public CEntity
 {
 public:
 	CPickAmmo(CGameWorld *pGameWorld, int Type, vec2 Pos, int Num=1);
+	~CPickAmmo();
 
 	virtual void Reset();
 	virtual void Tick();
@@ -18,6 +19,7 @@ public:
 
 private:
 	int m_Type;
+	int m_IDs[8];
 	int m_Num;
 };
 

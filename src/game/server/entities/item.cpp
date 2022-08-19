@@ -27,7 +27,6 @@ CItem::~CItem()
 	}
 }
 
-
 void CItem::Reset()
 {
 	GameServer()->m_World.DestroyEntity(this);

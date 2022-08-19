@@ -11,8 +11,21 @@ CPickAmmo::CPickAmmo(CGameWorld *pGameWorld, int Type, vec2 Pos, int Num)
 	m_Pos = Pos;
 	m_Num = Num;
 	m_ProximityRadius = PickupPhysSize;
+	for(int i = 0;i < 8;i++)
+	{
+		m_IDs[i] = Server()->SnapNewID();
+	}
+
 
 	GameWorld()->InsertEntity(this);
+}
+
+CPickAmmo::~CPickAmmo()
+{
+	for(int i = 0;i < 8;i++)
+	{
+		Server()->SnapFreeID(m_IDs[i]);
+	}
 }
 
 void CPickAmmo::Reset()
@@ -29,6 +42,7 @@ void CPickAmmo::Tick()
 		if(pChr->GetPlayer()->m_aWeapons[m_Type].m_Got == true)
 		{
 			pChr->GetPlayer()->m_aWeapons[m_Type].m_Ammo+=m_Num;
+			pChr->ShowInfo();
 			GameServer()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 			Reset();
 		}
@@ -40,12 +54,32 @@ void CPickAmmo::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, m_ID, sizeof(CNetObj_Pickup)));
+	float Radius = 16.0f;
+	float Angle = 0;
+	for(int i = 0;i < 8;i++)
+	{
+		vec2 Pos = m_Pos + (GetDir(Angle*pi/180) * Radius);
+		CNetObj_Projectile *pP = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
+		if(!pP)
+			return;
+
+		pP->m_X = (int)Pos.x;
+		pP->m_Y = (int)Pos.y;
+		pP->m_VelX = 0;
+		pP->m_VelY = 0;
+		pP->m_StartTick = Server()->Tick()-1;
+		pP->m_Type = WEAPON_HAMMER;
+		Angle += 360 / 8;
+	}
+
+	CNetObj_Projectile *pP = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));
 	if(!pP)
 		return;
 
 	pP->m_X = (int)m_Pos.x;
 	pP->m_Y = (int)m_Pos.y;
-	pP->m_Type = POWERUP_WEAPON;
-	pP->m_Subtype = m_Type;
+	pP->m_VelX = 0;
+	pP->m_VelY = 0;
+	pP->m_StartTick = Server()->Tick()-1;
+	pP->m_Type = m_Type;
 }

@@ -147,7 +147,7 @@ private:
 
     bool m_IsVisible;
     vec2 m_PrevPos;
-
+public:
 	void ShowInfo();
 };
 

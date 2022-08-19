@@ -9,6 +9,7 @@
 #include "laser.h"
 #include "projectile.h"
 #include "pickammo.h"
+#include "item.h"
 
 //input count
 struct CInputCount
@@ -197,7 +198,8 @@ void CCharacter::DoWeaponSwitch()
 	// make sure we can switch
 	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_pPlayer->m_aWeapons[WEAPON_NINJA].m_Got)
 		return;
-	ShowInfo();
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 	// switch Weapon
 	SetWeapon(m_QueuedWeapon);
 }
@@ -395,7 +397,8 @@ void CCharacter::FireWeapon()
 
 	if(!m_pPlayer->IsZomb() && m_pPlayer->m_aWeapons[m_ActiveWeapon].m_Ammo > 0) // -1 == unlimited
 		m_pPlayer->m_aWeapons[m_ActiveWeapon].m_Ammo--;
-	ShowInfo();
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 
 	if(!m_ReloadTimer)
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 1000;
@@ -640,7 +643,8 @@ bool CCharacter::IncreaseHealth(int Amount)
 	if(m_Health >= MaxHealth)
 		return false;
 	m_Health = clamp(m_Health+Amount, 0, MaxHealth);
-	ShowInfo();
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 	return true;
 }
 
@@ -650,7 +654,8 @@ bool CCharacter::IncreaseArmor(int Amount)
 	if(m_Armor >= MaxArmor)
 		return false;
 	m_Armor = clamp(m_Armor+Amount, 0, MaxArmor);
-	ShowInfo();
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 	return true;
 }
 
@@ -665,24 +670,30 @@ void CCharacter::Die(int Killer, int Weapon)
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
 	char aBuf[256];
-	if(Killer >= 0 && !GameServer()->m_apPlayers[Killer]->IsZomb())
+	if(Killer >= 0 && !GameServer()->m_apPlayers[Killer]->IsZomb() && !IsZombie)
 	{
 		str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 			Killer, Server()->ClientName(Killer),
 			m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-		if(!IsZombie)
+		for(int i=WEAPON_GUN;i <= WEAPON_RIFLE;i++)
 		{
-			for(int i=WEAPON_GUN;i <= WEAPON_RIFLE;i++)
+			if(m_pPlayer->m_aWeapons[i].m_Ammo)
 			{
-				if(m_pPlayer->m_aWeapons[i].m_Ammo)
-				{
-					new CPickAmmo(GameWorld(), i, DiePos, m_pPlayer->m_aWeapons[i].m_Ammo);
-				}
+				new CPickAmmo(GameWorld(), i, DiePos, m_pPlayer->m_aWeapons[i].m_Ammo);
+				m_pPlayer->m_aWeapons[i].m_Ammo = 0;
 			}
-			m_pPlayer->ResetWeapons();
-			GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
 		}
+		for(int i=ITEMTYPE_METAL;i <= NUM_ITEMTYPE;i++)
+		{
+			if(m_pPlayer->m_aResource[i].m_Num)
+			{
+				new CItem(GameWorld(), i, DiePos, m_pPlayer->m_aWeapons[i].m_Ammo);
+				m_pPlayer->m_aResource[i].m_Num = 0;
+			}
+		}
+		GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
+		
 	}
 
 	// send the kill message
@@ -798,8 +809,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
-
-	ShowInfo();
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 
 	return true;
 }
