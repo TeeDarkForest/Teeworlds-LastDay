@@ -1,0 +1,236 @@
+{"translation": 
+    [
+        {
+    		"key": "Language successfully switched to English",
+    		"value": "语言成功切换为中文"
+    	},
+        {
+            "key": "Unknown language or no input language code",
+            "value": "未知语言或没有输入语言代码"
+        },
+        {
+            "key": "Available languages: {str:ListOfLanguage}",
+            "value": "可用语言: {str:ListOfLanguage}"
+        },
+        {
+            "key": "'{str:PlayerName}' join the last day survive",
+            "value": "'{str:PlayerName}' 加入了最后一日的生存"
+        },
+        {
+            "key": "'{str:PlayerName}' rejoin the last day survive",
+            "value": "'{str:PlayerName}' 重新加入了最后一日的生存"
+        },
+        {
+            "key": "'{str:PlayerName}' leave for the time being",
+            "value": "'{str:PlayerName}' 暂时离开了"
+        },
+        {
+            "key": "'{str:PlayerName}' has gone ({str:Reason})",
+            "value": "'{str:PlayerName}' 离开了 ({str:Reason})"
+        },
+        {
+            "key": "'{str:PlayerName}' has gone",
+            "value": "'{str:PlayerName}' 离开了"
+        },
+        {
+            "key": "Spectators aren't allowed to start a vote.",
+            "value": "旁观者不能提出一个投票."
+        },
+        {
+            "key": "Wait for current vote to end before calling a new one.",
+            "value": "等待当前投票结束后再提出新的投票."
+        },
+        {
+            "key": "Vote aborted",
+            "value": "投票中止"
+        },
+        {
+            "key": "Vote passed",
+            "value": "投票通过"
+        },
+        {
+            "key": "Vote failed",
+            "value": "投票否决"
+        },
+        {
+            "key":  "admin forced server option '{str:O}' ({str:R})",
+            "value":  "管理员修改了服务器设置 '{str:O}' ({str:R})"
+        },
+        {
+            "key": "admin moved '{str:N}' to spectator ({str:R})",
+            "value": "管理员将 '{str:N}' 移到旁观 ({str:R})"
+        },
+        {
+            "key": "admin forced vote yes",
+            "value": "管理员强制为投票执行通过"
+        },
+        {
+            "key": "admin forced vote no",
+            "value": "管理员强制为投票执行否决"
+        },
+        {
+            "key": "You must wait {str:Time} seconds before making another vote",
+            "value": "你必须等待 {str:Time} 秒才能再次提出另一个投票"
+        },
+        {
+            "key": "'{str:PlayerName}' called vote to change server option '{str:Option}' ({str:Reason})",
+            "value": "'{str:PlayerName}' 提议修改服务器设置 '{str:Option}' ({str:Reason})"
+        },
+        {
+            "key": "'{str:Option}' isn't an option on this server",
+            "value": "'{str:Option}' 在此服务器上并不是一个设置"
+        },
+        {
+            "key": "Server does not allow voting to kick players",
+            "value": "服务器不允许投票踢出玩家"
+        },
+        {
+            "key": "Kick voting requires {str:Num} players on the server",
+            "value": "在这个服务器上开始踢出的投票需要{str:Num}名玩家"
+        },
+        {
+            "key": "Invalid client id to kick",
+            "value": "缺少要踢出的客户端ID"
+        },
+        {
+            "key": "You can't kick yourself",
+            "value": "你不能踢出你自己"
+        },
+        {
+            "key": "You can't kick admins",
+            "value": "你不能踢出管理员"
+        },
+        {
+            "key": "'{str:Player}' called for vote to kick you",
+            "value": "'{str:Player}' 提议踢出你"
+        },
+        {
+            "key": "'{str:Player1}' called for vote to kick '{str:Player2}' ({str:R})",
+            "value": "'{str:Player1}' 提议踢出 '{str:Player2}' ({str:R})"
+        },
+        {
+            "key": "Server does not allow voting to move players to spectators",
+            "value": "服务器不允许投票移动玩家到旁观"
+        },
+        {
+            "key": "Invalid client id to move",
+            "value": "缺少要移动的客户端ID"
+        },
+        {
+            "key": "You can't move yourself",
+            "value": "你不能移动你自己"
+        },
+        {
+            "key": "'{str:Player1}' called for vote to move '{str:Player2}' to spectators ({str:R})",
+            "value": "'{str:Player1}' 提议将 '{str:Player2}' 移到旁观 ({str:R})"
+        },
+        {
+            "key": "Teams are locked",
+            "value": "队伍已经锁定"
+        },
+        {
+            "key": "Teams were swapped",
+            "value": "队伍交换"
+        },
+        {
+            "key": "Teams were locked",
+            "value": "队伍锁定"
+        },
+        {
+            "key": "Teams were unlocked",
+            "value": "队伍解锁"
+        },
+        {
+            "key": "Teams must be balanced, please join other team",
+            "value": "队伍人数必须均衡，请加入另一个队伍"
+        },
+        {
+            "key": "Only {str:ID} active players are allowed",
+            "value": "只允许 {str:ID} 名玩家游玩"
+        },
+        {
+            "key": "Invalid spectator id used",
+            "value": "该旁观者ID没有被使用"
+        },
+        {
+            "key": "'{str:Old}' changed name to '{str:New}'",
+            "value": "'{str:Old}' 改名叫 '{str:New}'"
+        },
+        {
+            "key": "Metal",
+            "value": "金属"
+        },
+        {
+            "key": "Hammer",
+            "value": "锤子"
+        },
+        {
+            "key": "Gun",
+            "value": "手枪"
+        },
+        {
+            "key": "Shotgun",
+            "value": "散弹枪"
+        },
+        {
+            "key": "Grenade",
+            "value": "榴弹炮"
+        },
+        {
+            "key": "Rifle",
+            "value": "激光枪"
+        },
+        {
+            "key": "Welcome to Last Day mode.",
+            "value": "欢迎来到最后一日模式."
+        },
+        {
+            "key": "In this mode you can kill any humans,",
+            "value": "在这个模式里你可以杀死任何人类,"
+        },
+        {
+            "key": "Or zombies to get ammo.",
+            "value": "或者僵尸来获得弹药."
+        },
+        {
+            "key": "ANYTHING FOR SURVIVE!",
+            "value": "任 何 举 动 都 是 为 了 生 存 !"
+        },
+        {
+            "key": "Health: {int:Health}/{int:MaxHP}\nArmor: {int:Armor}/{int:MaxA}\nAmmo: {int:AmmoNum}",
+            "value": "血量: {int:Health}/{int:MaxHP}\n盾: {int:Armor}/{int:MaxA}\n弹药: {int:AmmoNum}"
+        },
+        {
+            "key": "'{str:Killer}' killed '{str:Victim}'",
+            "value": "'{str:Killer}' 杀死了 '{str:Victim}'"
+        },
+        {
+            "key": "'{str:Killer}' say 'Goodbye' to '{str:Victim}'",
+            "value": "'{str:Killer}' 对 '{str:Victim}' 说:'再见'"
+        },
+        {
+            "key": "'{str:Killer}' say 'Hijack' to '{str:Victim}'",
+            "value": "'{str:Killer}' 对 '{str:Victim}' 说:'打劫'"
+        },
+        {
+            "key": "You got {int:Num} {str:resource}",
+            "value": "你得到了{int:Num}个{str:resource}"
+        },
+        {
+            "key": "You make '{str:itemName}'",
+            "value": "你制作了'{str:itemName}'"
+        },
+        {
+            "key": "In this version you only can make: Shotgun, Grenade, Rifle",
+            "value": "在这个版本里你只能制作: Shotgun散弹枪, Grenade榴弹炮, Rifle激光枪"
+        },
+        {
+            "key": "You need {int:Num} resource to make this.",
+            "value": "你需要{int:Num}个资源来做这个物品."
+        },
+        {
+            "key": "You has {int:Metal} metal.",
+            "value": "你拥有{int:Metal}片金属."
+        }
+    ]
+}
