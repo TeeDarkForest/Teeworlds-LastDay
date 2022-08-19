@@ -249,7 +249,7 @@ void CPlayer::OnDisconnect(const char *pReason)
 {
 	KillCharacter();
 
-	if(Server()->ClientIngame(m_ClientID))
+	if(!IsZomb())
 	{
 		char aBuf[512];
 		if(pReason && *pReason)
