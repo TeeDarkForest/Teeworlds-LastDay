@@ -602,10 +602,10 @@ void CGameContext::OnClientEnter(int ClientID)
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
 	SendChatTarget(-1, _("'{str:PlayerName}' join the last day survive"),"PlayerName", Server()->ClientName(ClientID), NULL);
-	SendChatTarget(-1, _("Welcome to Last Day mode."));
-	SendChatTarget(-1, _("In this mode you can kill any humans,"));
-	SendChatTarget(-1, _("Or zombies to get ammo."));
-	SendChatTarget(-1, _("ANYTHING FOR SURVIVE!"));
+	SendChatTarget(ClientID, _("Welcome to Last Day mode."));
+	SendChatTarget(ClientID, _("In this mode you can kill any humans,"));
+	SendChatTarget(ClientID, _("Or zombies to get ammo."));
+	SendChatTarget(ClientID, _("ANYTHING FOR SURVIVE!"));
 	m_apPlayers[ClientID]->ResetWeapons(true);
 	m_apPlayers[ClientID]->ResetResource();
 

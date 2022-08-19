@@ -1104,6 +1104,8 @@ void CCharacter::DoZombieAim(vec2 VictimPos, int VicCID, vec2 NearZombPos, int N
 
 void CCharacter::ShowInfo()
 {
+	if(!m_pPlayer)
+		return;
 	int MaxHealth = g_Config.m_LdMaxHumanHP;
 	int MaxArmor = g_Config.m_LdMaxHumanArmor;
 	int AmmoNum = m_pPlayer->m_aWeapons[m_ActiveWeapon].m_Ammo;
