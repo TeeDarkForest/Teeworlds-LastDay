@@ -198,10 +198,10 @@ void CCharacter::DoWeaponSwitch()
 	// make sure we can switch
 	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_pPlayer->m_aWeapons[WEAPON_NINJA].m_Got)
 		return;
-	if(!m_pPlayer->IsZomb())
-		ShowInfo();
 	// switch Weapon
 	SetWeapon(m_QueuedWeapon);
+	if(!m_pPlayer->IsZomb())
+		ShowInfo();
 }
 
 void CCharacter::HandleWeaponSwitch()
