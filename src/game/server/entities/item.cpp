@@ -2,11 +2,14 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
+#include <engine/shared/config.h>
+
 #include "item.h"
 
 CItem::CItem(CGameWorld *pGameWorld, int Type, vec2 Pos, int Num)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP)
 {
+	m_StartTick = Server()->Tick();
 	m_Type = Type;
 	m_Pos = Pos;
 	m_Num = Num;
@@ -42,9 +45,14 @@ void CItem::Tick()
         GameServer()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
         GameServer()->SendChatTarget(pChr->GetPlayer()->GetCID(), 
             _("You got {int:Num} {str:resource}"), "Num", &m_Num, 
-            "resource", Server()->Localization()->Localize(pChr->GetPlayer()->GetLanguage(),
+            "resource", GameServer()->Localize(pChr->GetPlayer()->GetLanguage(),
                 GameServer()->GetResourceName(m_Type)), NULL);
         Reset();
+	}
+
+	if((m_StartTick + (g_Config.m_LdItemLifeSpan * Server()->TickSpeed())) < Server()->Tick())
+	{
+		Reset();
 	}
 }
 

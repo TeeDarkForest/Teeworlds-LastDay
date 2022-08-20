@@ -8,12 +8,6 @@
 #include <game/generated/protocol.h>
 #include <engine/shared/protocol.h>
 
-enum
-{
-	ITEMTYPE_METAL=0,
-	NUM_ITEMTYPE,
-};
-
 class IServer : public IInterface
 {
 	MACRO_INTERFACE("server", 0)

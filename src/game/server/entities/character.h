@@ -149,6 +149,7 @@ private:
     vec2 m_PrevPos;
 public:
 	void ShowInfo();
+	int m_AfraidTick;
 };
 
 #endif

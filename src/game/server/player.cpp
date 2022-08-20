@@ -432,8 +432,15 @@ void CPlayer::ResetWeapons(bool ResetGot)
 
 void CPlayer::ResetResource()
 {
-	for(int i=ITEMTYPE_METAL;i < NUM_ITEMTYPE;i++)
+	for(int i=RESOURCE_METAL;i < NUM_RESOURCE;i++)
 	{
 		m_aResource[i].m_Num = 0;
 	}
 }
+#ifdef CONF_SQL
+void CPlayer::Logout()
+{
+	m_AccData.m_UserID = 0;
+	LoggedIn = false;
+}
+#endif

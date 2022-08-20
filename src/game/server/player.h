@@ -4,6 +4,8 @@
 #define GAME_SERVER_PLAYER_H
 
 // this include should perhaps be removed
+#include <lastday/item.h>
+
 #include "entities/character.h"
 #include "gamecontext.h"
 
@@ -115,7 +117,22 @@ public:
 	struct Resource
 	{
 		int m_Num;
-	} m_aResource[NUM_ITEMTYPE];
+	} m_aResource[NUM_RESOURCE];
+
+
+	#ifdef CONF_SQL
+	// Account
+	bool LoggedIn;
+	struct
+	{
+		int m_UserID;
+		char m_Username[20];
+		char m_Password[20];
+		
+	} m_AccData;
+	#endif
+
+	void Logout();
 
 private:
 	CCharacter *m_pCharacter;

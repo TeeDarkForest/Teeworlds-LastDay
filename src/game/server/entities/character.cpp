@@ -4,6 +4,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/mapitems.h>
+#include <lastday/item-sys.h>
 
 #include "character.h"
 #include "laser.h"
@@ -45,6 +46,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 : CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER)
 {
 	m_ProximityRadius = ms_PhysSize;
+	m_AfraidTick = -1;
 	m_Health = 0;
 	m_Armor = 0;
 }
@@ -62,6 +64,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
+	m_AfraidTick = -1;
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
@@ -512,6 +515,19 @@ void CCharacter::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, m_pPlayer->GetNextTuningParams());
 
+	if (m_AfraidTick >= 0)
+	{
+		m_AfraidTick--;
+		if(m_AfraidTick < 0)
+		{
+			GameServer()->CreateSoundGlobal(SOUND_PLAYER_PAIN_LONG, m_pPlayer->GetCID());
+			m_EmoteType = EMOTE_PAIN;
+			m_EmoteStop = Server()->Tick() + 2 * Server()->TickSpeed();
+		}
+	}
+	else if(!m_pPlayer->IsZomb())
+		m_AfraidTick = Server()->TickSpeed() * random_int(10, 30);
+	
 	// handle death-tiles and leaving gamelayer
 	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
 		GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
@@ -670,7 +686,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
 	char aBuf[256];
-	if(Killer >= 0 && !GameServer()->m_apPlayers[Killer]->IsZomb() && !IsZombie)
+	if(Killer >= 0 && Killer != m_pPlayer->GetCID() && !GameServer()->m_apPlayers[Killer]->IsZomb() && !IsZombie)
 	{
 		str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 			Killer, Server()->ClientName(Killer),
@@ -684,7 +700,7 @@ void CCharacter::Die(int Killer, int Weapon)
 				m_pPlayer->m_aWeapons[i].m_Ammo = 0;
 			}
 		}
-		for(int i=ITEMTYPE_METAL;i <= NUM_ITEMTYPE;i++)
+		for(int i=RESOURCE_METAL;i <= NUM_RESOURCE;i++)
 		{
 			if(m_pPlayer->m_aResource[i].m_Num > 0)
 			{
@@ -692,8 +708,7 @@ void CCharacter::Die(int Killer, int Weapon)
 				m_pPlayer->m_aResource[i].m_Num = 0;
 			}
 		}
-		if(Killer != m_pPlayer->GetCID())
-			GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
+		GameServer()->SendKillMsg(Killer, m_pPlayer->GetCID(), Weapon);
 		
 	}
 

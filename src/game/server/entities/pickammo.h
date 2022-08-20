@@ -21,6 +21,7 @@ private:
 	int m_Type;
 	int m_IDs[8];
 	int m_Num;
+	int m_StartTick;
 };
 
 #endif

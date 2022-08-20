@@ -9,6 +9,10 @@
 
 #include <teeuniverses/components/localization.h>
 
+#ifdef CONF_SQL
+#include <lastday/sql.h>
+#endif
+
 #include <game/layers.h>
 #include <game/voting.h>
 
@@ -56,6 +60,12 @@ class CGameContext : public IGameServer
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 
+	#ifdef CONF_SQL
+	/* SQL */
+	CSQL *m_Sql;
+	CAccountData *m_AccountData;
+	#endif
+
 	static void ConsoleOutputCallback_Chat(const char *pLine, void *pUser);
 
 	static void ConLanguage(IConsole::IResult *pResult, void *pUserData);
@@ -83,6 +93,11 @@ class CGameContext : public IGameServer
 	/* Last Day Start */
 	static void ConMake(IConsole::IResult *pResult, void *pUserData);
 	static void ConMe(IConsole::IResult *pResult, void *pUserData);
+#ifdef CONF_SQL
+	static void ConRegister(IConsole::IResult *pResult, void *pUserData);
+	static void ConLogin(IConsole::IResult *pResult, void *pUserData);
+	static void ConLogout(IConsole::IResult *pResult, void *pUserData);
+#endif
 	/*  Last Day End  */
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -117,6 +132,13 @@ public:
 	class CCharacter *GetPlayerChar(int ClientID);
 
 	int m_LockTeams;
+
+	#ifdef CONF_SQL
+	/* SQL */
+	CSQL *Sql() const { return m_Sql; };
+	CAccountData *AccountData() {return m_AccountData; };
+	void LogoutAccount(int ClientID);
+	#endif
 
 	// voting
 	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
@@ -214,6 +236,7 @@ public:
 
 	const char *GetWeaponName(int Weapon);
 	const char *GetResourceName(int Type);
+	const char* Localize(const char* pLanguageCode, const char* pText);
 	void SendKillMsg(int Killer, int Victim, int Weapon);
 	/* Last Day End */
 };

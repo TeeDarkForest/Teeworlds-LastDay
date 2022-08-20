@@ -112,7 +112,7 @@ bool CLocalization::CLanguage::Load(CLocalization* pLocalization, CStorage* pSto
 {
 	// read file data into buffer
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "./server_lang/%s.json", m_aFilename);
+	str_format(aBuf, sizeof(aBuf), "./data/server_lang/%s.json", m_aFilename);
 	
 	IOHANDLE File = pStorage->OpenFile(aBuf, IOFLAG_READ, CStorage::TYPE_ALL);
 	if(!File)
@@ -309,11 +309,11 @@ bool CLocalization::Init()
 	}
 	
 	// read file data into buffer
-	const char *pFilename = "./server_lang/index.json";
+	const char *pFilename = "./data/server_lang/index.json";
 	IOHANDLE File = Storage()->OpenFile(pFilename, IOFLAG_READ, CStorage::TYPE_ALL);
 	if(!File)
 	{
-		dbg_msg("Localization", "can't open 'server_lang/index.json'");
+		dbg_msg("Localization", "can't open 'data/server_lang/index.json'");
 		return true; //return true because it's not a critical error
 	}
 	

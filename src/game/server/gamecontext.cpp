@@ -12,9 +12,14 @@
 #include <string.h>
 
 #include <teeuniverses/components/localization.h>
+#include <lastday/item-sys.h>
+
 #include "entities/pickammo.h"
 #include "entities/item.h"
 #include "lastday/lastday.h"
+#ifdef CONF_SQL
+#include <engine/server/crypt.h>
+#endif
 
 enum
 {
@@ -73,6 +78,11 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
+
+	#ifdef CONF_SQL
+	delete m_Sql;
+	delete m_AccountData;
+	#endif
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -645,6 +655,18 @@ void CGameContext::OnClientConnected(int ClientID)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
+#ifdef CONF_SQL
+	for(int i = RESOURCE_METAL;i < NUM_RESOURCE;i++)
+		Sql()->SaveItem(ClientID, GetResourceName(i), m_apPlayers[ClientID]->m_aResource[i].m_Num);
+	for(int i = WEAPON_SHOTGUN;i < WEAPON_NINJA;i++)
+		Sql()->SaveItem(ClientID, GetWeaponName(i), m_apPlayers[ClientID]->m_aWeapons[i].m_Got);
+	for(int i = WEAPON_SHOTGUN;i < WEAPON_NINJA;i++)
+	{
+		char aBuf[32];
+		str_format(aBuf, sizeof(aBuf), "%sAmmo", GetWeaponName(i));
+		Sql()->SaveItem(ClientID, aBuf, m_apPlayers[ClientID]->m_aWeapons[i].m_Ammo);
+	}
+#endif
 	AbortVoteKickOnDisconnect(ClientID);
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
@@ -1624,7 +1646,7 @@ void CGameContext::ConLanguage(IConsole::IResult *pResult, void *pUserData)
 	else
 	{
 		const char* pLanguage = pSelf->m_apPlayers[ClientID]->GetLanguage();
-		const char* pTxtUnknownLanguage = pSelf->Server()->Localization()->Localize(pLanguage, _("Unknown language or no input language code"));
+		const char* pTxtUnknownLanguage = pSelf->Localize(pLanguage, _("Unknown language or no input language code"));
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "language", pTxtUnknownLanguage);
 
 		dynamic_string BufferList;
@@ -1697,7 +1719,7 @@ void CGameContext::ConMake(IConsole::IResult *pResult, void *pUserData)
 				if(pSelf->m_apPlayers[ClientID]->m_aResource[0].m_Num >= NeedResource)
 				{
 					pSelf->SendChatTarget(ClientID, _("You make '{str:itemName}'"), 
-						"itemName", pSelf->Server()->Localization()->Localize(pLanguage, _(pSelf->GetWeaponName(i))), NULL);
+						"itemName", pSelf->Localize(pLanguage, _(pSelf->GetWeaponName(i))));
 					pSelf->m_apPlayers[ClientID]->m_aWeapons[i].m_Got = true;
 					pSelf->m_apPlayers[ClientID]->m_aResource[0].m_Num -= i+1;
 					return;
@@ -1719,14 +1741,87 @@ void CGameContext::ConMe(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext* pSelf = (CGameContext*) pUserData;
 
-	int ClientID = pResult->GetClientID();
-	int Metal = pSelf->m_apPlayers[ClientID]->m_aResource[ITEMTYPE_METAL].m_Num;
+	std::string Buffer;
+	Buffer.clear();
 
+	int ClientID = pResult->GetClientID();
+	const char* pLanguage = pSelf->m_apPlayers[ClientID]->GetLanguage();
+
+	for(int i = 0;i < NUM_RESOURCE; i++)
+	{
+		int Num = pSelf->m_apPlayers[ClientID]->m_aResource[i].m_Num;
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "%d %s", Num, pSelf->Localize(pLanguage, pSelf->GetResourceName(i)));
+		
+		Buffer.append(aBuf);
+		if(i < NUM_RESOURCE-1)
+		{
+			Buffer.append(", ");
+		}
+	}
 	pSelf->SendChatTarget(ClientID, 
-		_("You has {int:Metal} metal."), "Metal", &Metal, NULL);
+		_("You has {str:Resource}."), "Resource", Buffer.c_str(), NULL);
 	return;
 }
+#ifdef CONF_SQL
 
+void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *) pUserData;
+
+    if (pResult->NumArguments() != 2) {
+        pSelf->SendChatTarget(pResult->GetClientID(), _("Usage: /register <username> <password>"), NULL);
+        return;
+    }
+
+    char Username[512];
+    char Password[512];
+    str_copy(Username, pResult->GetString(0), sizeof(Username));
+    str_copy(Password, pResult->GetString(1), sizeof(Password));
+
+    char aHash[64];
+	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
+
+    pSelf->Sql()->create_account(Username, aHash, pResult->GetClientID());
+    return;
+}
+
+void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *) pUserData;
+    if (pResult->NumArguments() != 2) {
+        pSelf->SendChatTarget(pResult->GetClientID(), _("usage: /login <username> <password>"), NULL);
+        return;
+    }
+
+    char Username[512];
+    char Password[512];
+    str_copy(Username, pResult->GetString(0), sizeof(Username));
+    str_copy(Password, pResult->GetString(1), sizeof(Password));
+
+    char aHash[64]; //Result
+	mem_zero(aHash, sizeof(aHash));
+	Crypt(Password, (const unsigned char*) "d9", 1, 14, aHash);
+	
+    pSelf->Sql()->login(Username, aHash, pResult->GetClientID());
+    return;
+}
+
+void CGameContext::ConLogout(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *) pUserData;
+    pSelf->LogoutAccount(pResult->GetClientID());
+}
+
+void CGameContext::LogoutAccount(int ClientID)
+{
+	CPlayer *pP = m_apPlayers[ClientID];
+    CCharacter *pChr = pP->GetCharacter();
+    pP->Logout();
+    SendChatTarget(pP->GetCID(), _("Logout succesful"));
+}
+
+#endif
 
 void CGameContext::OnConsoleInit()
 {
@@ -1762,6 +1857,11 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("make", "?s", CFGFLAG_CHAT, ConMake, this, "make item");
 	Console()->Register("me", "", CFGFLAG_CHAT, ConMe, this, "show info");
 	Console()->Register("status", "", CFGFLAG_CHAT, ConMe, this, "show info");
+#ifdef CONF_SQL
+	Console()->Register("register", "?s?s", CFGFLAG_CHAT, ConRegister, this, "Create an account");
+	Console()->Register("login", "?s?s", CFGFLAG_CHAT, ConLogin, this, "Login to an account");
+	Console()->Register("logout", "", CFGFLAG_CHAT, ConLogout, this, "Logout");
+#endif
 	/*  Last Day End  */
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
@@ -1792,6 +1892,13 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	// select gametype
 	m_pController = new CGameControllerLastDay(this);
+
+	#ifdef CONF_SQL
+	// init mysql
+	m_AccountData = new CAccountData;
+	m_Sql = new CSQL(this);
+	#endif
+
 
 	// setup core world
 	//for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1980,10 +2087,10 @@ void CGameContext::OnZombieKill(int ClientID, vec2 Pos)
 		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == ClientID)
 			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
 	}
-	int rand = random_int(WEAPON_GUN, WEAPON_NINJA);
-	if(rand < WEAPON_NINJA)
-		new CPickAmmo(&m_World, rand, Pos, 2);
-	else new CItem(&m_World, random_int(ITEMTYPE_METAL, NUM_ITEMTYPE-1), Pos, 1);
+	int rand = random_int(0, 100);
+	if(rand < 90)
+		new CPickAmmo(&m_World, random_int(WEAPON_SHOTGUN, WEAPON_RIFLE), Pos, 2);
+	else new CItem(&m_World, random_int(RESOURCE_METAL, NUM_RESOURCE-1), Pos, 1);
 }
 
 const char *CGameContext::GetWeaponName(int Weapon)
@@ -2002,8 +2109,13 @@ const char *CGameContext::GetResourceName(int Type)
 {
 	switch (Type)
 	{
-		case ITEMTYPE_METAL: return "Metal";break;
+		case RESOURCE_METAL: return "Metal";break;
 	}
+}
+
+const char* CGameContext::Localize(const char* pLanguageCode, const char* pText)
+{
+	return Server()->Localization()->Localize(pLanguageCode, pText);
 }
 
 void CGameContext::SendKillMsg(int Killer, int Victim, int Weapon)
