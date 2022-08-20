@@ -2,7 +2,6 @@
 #ifdef CONF_SQL
 /* SQL class 0.5 by Sushi */
 /* SQL class 0.6 by FFS   */
-/* This version by ErrorDreemurr   */
 #include <game/server/gamecontext.h>
 #include <engine/shared/config.h>
 #include "sql.h"
