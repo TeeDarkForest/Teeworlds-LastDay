@@ -12,11 +12,9 @@
 #include <string.h>
 
 #include <teeuniverses/components/localization.h>
-#include <lastday/item-sys.h>
 
 #include "entities/pickammo.h"
 #include "entities/item.h"
-#include "lastday/lastday.h"
 #ifdef CONF_SQL
 #include <engine/server/crypt.h>
 #endif
@@ -1891,7 +1889,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	//players = new CPlayer[MAX_CLIENTS];
 
 	// select gametype
-	m_pController = new CGameControllerLastDay(this);
+	m_pController = new IGameController(this);
 
 	#ifdef CONF_SQL
 	// init mysql

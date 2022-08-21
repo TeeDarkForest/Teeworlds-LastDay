@@ -10,7 +10,7 @@
 #include <teeuniverses/components/localization.h>
 
 #ifdef CONF_SQL
-#include <lastday/sql.h>
+#include "LastDay/Account/AccCore.h"
 #endif
 
 #include <game/layers.h>
@@ -29,6 +29,10 @@ typedef unsigned __int64 uint64_t;
 #else
 #include <stdint.h>
 #endif
+
+#include "LastDay/ItemData.h"
+
+#include <vector>
 
 /*
 	Tick
@@ -229,16 +233,31 @@ public:
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
-	/* Last Day Start */
+	/* ZOMB START */
 	void OnZombieKill(int ClientID, vec2 Pos);
 	void OnZombie(int ClientID, int Zomb);
 	int NumZombiesAlive();
+	/* ZOMB END */
 
+	/* LAST DAY START */
 	const char *GetWeaponName(int Weapon);
 	const char *GetResourceName(int Type);
 	const char* Localize(const char* pLanguageCode, const char* pText);
 	void SendKillMsg(int Killer, int Victim, int Weapon);
-	/* Last Day End */
+	/* LAST DAY End */
+
+public:
+	/***FFS*STUFF*START***/
+
+	struct CItemData
+	{
+		const char *ItemName;
+		int NeedResource[NUM_RESOURCE];
+	};
+
+	std::vector<CItemData> m_vItem;
+	
+	/***FFS**STUFF**END***/
 };
 
 inline int64_t CmaskAll() { return -1LL; }

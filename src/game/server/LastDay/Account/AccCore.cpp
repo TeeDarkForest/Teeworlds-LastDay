@@ -4,7 +4,6 @@
 /* SQL class 0.6 by FFS   */
 #include <game/server/gamecontext.h>
 #include <engine/shared/config.h>
-#include "sql.h"
 
 static LOCK SQLLock = 0;
 CGameContext *m_pGameServer;

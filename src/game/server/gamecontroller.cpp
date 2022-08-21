@@ -14,7 +14,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
 	m_pServer = m_pGameServer->Server();
-	m_pGameType = "unknown";
+	m_pGameType = "LastDay";
 
 	//
 	DoWarmup(g_Config.m_SvWarmup);
@@ -437,6 +437,24 @@ bool IGameController::CanBeMovedOnBalance(int ClientID)
 
 void IGameController::Tick()
 {
+	int Players = 0;
+	for(int i = 0;i < MAX_CLIENTS; i++)
+	{
+		if(GameServer()->m_apPlayers[Players])
+		{
+			if(!GameServer()->m_apPlayers[Players]->IsZomb())
+			{
+				Players++;
+			}
+		}
+	}
+
+	
+	if(m_GameOverTick == -1)
+	{
+		CheckZombie();
+	}
+
 	// do warmup
 	if(!GameServer()->m_World.m_Paused && m_Warmup)
 	{

@@ -14,13 +14,13 @@
 #include "generated/nethash.cpp"
 #define GAME_VERSION "0.6.4"
 #define GAME_NETVERSION "0.6 626fce9a778df4d4" //the std game version
-static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '4', 0};
+static const char GAME_RELEASE_VERSION[8] = "0.6.4";
 
 #define MOD_NAME "Last Day"
-#define MOD_VERSION "0.2"
-#define MOD_AUTHORS "ErrorDreemur"
-#define MOD_CREDITS ""
-#define MOD_THANKS ""
+#define MOD_VERSION "0.3"
+#define MOD_AUTHORS "ErrorDreemur, FlowerFell-Sans"
+#define MOD_CREDITS "ErrorDreemur, FlowerFell-Sans"
+#define MOD_THANKS "Ninecloud, SushiTee, StarOnTheSky, Necropotame, Mettaton, Spamton G. Spamton"
 #define MOD_SOURCES ""
 #endif
 #endif

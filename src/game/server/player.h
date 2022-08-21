@@ -4,10 +4,11 @@
 #define GAME_SERVER_PLAYER_H
 
 // this include should perhaps be removed
-#include <lastday/item.h>
 
 #include "entities/character.h"
 #include "gamecontext.h"
+
+#include "LastDay/ItemData.h"
 
 // player object
 class CPlayer

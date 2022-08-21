@@ -5,7 +5,7 @@
 #undef ENGINE_SHARED_CONFIG_VARIABLES_H // this file will be included several times
 
 #include <game/variables.h>
-#include <game/server/gameconfig.h>>
+#include <game/server/gameconfig.h>
 
 
 MACRO_CONFIG_STR(Password, password, 32, "", CFGFLAG_CLIENT|CFGFLAG_SERVER, "Password to the server")

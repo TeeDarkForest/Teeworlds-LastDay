@@ -1,0 +1,10 @@
+#ifndef LASTDAY_ITEM_DATA
+#define LASTDAY_ITEM_DATA
+
+enum ItemData
+{
+	RESOURCE_METAL=0,
+	NUM_RESOURCE,
+};
+
+#endif
