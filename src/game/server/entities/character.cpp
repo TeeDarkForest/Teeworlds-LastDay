@@ -612,11 +612,10 @@ void CCharacter::Die(int Killer, int ShowWeapon, int Weapon)
 
 	// we got to wait 0.5 secs before respawning
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
-
-
+	
 	if(Killer >= 0 && Killer < MAX_CLIENTS && GameServer()->m_apPlayers[Killer])
 	{
+		int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 		if(!GameServer()->m_apPlayers[Killer]->GetZomb() && !m_pPlayer->GetZomb())
 		{
 			char aBuf[256];
