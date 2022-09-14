@@ -176,6 +176,8 @@ private:
 	void HandleTeleports();
 	void TeleToId(int TeleNumber, int TeleType);
 	void UpdateTuningParam();
+	
+	int GetCID();
 	/*  Last Day End  */
 
 };

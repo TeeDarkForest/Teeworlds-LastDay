@@ -89,7 +89,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Core.Reset();
 	m_Core.Init(&GameServer()->m_World.m_Core, GameServer()->Collision());
 	m_Core.m_Pos = m_Pos;
-	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = &m_Core;
+	GameServer()->m_World.m_Core.m_apCharacters[GetCID()] = &m_Core;
 
 	m_ReckoningTick = 0;
 	mem_zero(&m_SendCore, sizeof(m_SendCore));
@@ -109,7 +109,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 void CCharacter::Destroy()
 {
-	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
+	GameServer()->m_World.m_Core.m_apCharacters[GetCID()] = 0;
 	m_Alive = false;
 }
 
@@ -194,7 +194,7 @@ void CCharacter::HandleNinja()
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
 
-				aEnts[i]->TakeDamage(vec2(0, -10.0f), g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage, m_pPlayer->GetCID(), WEAPON_NINJA);
+				aEnts[i]->TakeDamage(vec2(0, -10.0f), g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage, GetCID(), WEAPON_NINJA);
 			}
 		}
 
@@ -213,7 +213,7 @@ void CCharacter::DoWeaponSwitch()
 
 	// switch Weapon
 	SetWeapon(m_QueuedWeapon);
-	GameServer()->SendChatTarget(-1, "Weapon: {int:Weapon}", "Weapon", &m_ActiveWeapon, NULL);
+	GameServer()->SendChatTarget(GetCID(), "Weapon: {int:Weapon}", "Weapon", &m_ActiveWeapon, NULL);
 }
 
 void CCharacter::HandleWeaponSwitch()
@@ -262,7 +262,7 @@ void CCharacter::FireWeapon()
 	if(m_ReloadTimer != 0)
 		return;
 
-	if(IsFrozen())
+	if(IsFrozen() || !IsAlive())
 	{
 		return;
 	}
@@ -303,7 +303,7 @@ void CCharacter::FireWeapon()
 		return;
 
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
-	int ClientID = m_pPlayer->GetCID();
+	int ClientID = GetCID();
 
 	if(m_ActiveWeapon == TWS_WEAPON_HAMMER || m_ActiveWeapon == TWS_WEAPON_NINJA)
 	{
@@ -311,7 +311,7 @@ void CCharacter::FireWeapon()
 		m_NumObjectsHit = 0;
 	}
 
-	pWeapon->OnFire(m_pPlayer->GetCID(), Direction, ProjStartPos);
+	pWeapon->OnFire(GetCID(), Direction, ProjStartPos);
 
 	m_AttackTick = Server()->Tick();
 
@@ -465,7 +465,7 @@ void CCharacter::Tick()
 	{
 		char Buf[128];
 		str_format(Buf, sizeof(Buf), "You were moved to %s due to team balancing", GameServer()->m_pController->GetTeamName(m_pPlayer->GetTeam()));
-		GameServer()->SendBroadcast(Buf, m_pPlayer->GetCID());
+		GameServer()->SendBroadcast(Buf, GetCID());
 
 		m_pPlayer->m_ForceBalanced = false;
 	}
@@ -478,10 +478,10 @@ void CCharacter::Tick()
 
 	m_Core.Tick(true, &CoreTickParams);
 
-	//Hanle zones
-	HandleZones();
 	// handle Weapons
 	HandleWeapons();
+	//Hanle zones
+	HandleZones();
 
 	// Previnput
 	m_PrevInput = m_Input;
@@ -541,7 +541,7 @@ void CCharacter::TickDefered()
 	}
 
 	int Events = m_Core.m_TriggeredEvents;
-	std::bitset<MAX_CLIENTS> Mask = CmaskAllExceptOne(m_pPlayer->GetCID());
+	std::bitset<MAX_CLIENTS> Mask = CmaskAllExceptOne(GetCID());
 
 	if(Events&COREEVENT_HOOK_ATTACH_PLAYER) GameServer()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_PLAYER, CmaskAll());
 	
@@ -621,13 +621,13 @@ void CCharacter::Die(int Killer, int ShowWeapon, int Weapon)
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 				Killer, Server()->ClientName(Killer),
-				m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
+				GetCID(), Server()->ClientName(GetCID()), Weapon, ModeSpecial);
 			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 			// send the kill message
 			CNetMsg_Sv_KillMsg Msg;
 			Msg.m_Killer = Killer;
-			Msg.m_Victim = m_pPlayer->GetCID();
+			Msg.m_Victim = GetCID();
 			Msg.m_Weapon = ShowWeapon;
 			Msg.m_ModeSpecial = ModeSpecial;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
@@ -641,11 +641,11 @@ void CCharacter::Die(int Killer, int ShowWeapon, int Weapon)
 
 	m_Alive = false;
 	GameServer()->m_World.RemoveEntity(this);
-	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
-	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+	GameServer()->m_World.m_Core.m_apCharacters[GetCID()] = 0;
+	GameServer()->CreateDeath(m_Pos, GetCID());
 
 	if(m_pPlayer && m_pPlayer->m_Zomb)
-		GameServer()->OnZombieKill(m_pPlayer->GetCID());//remove the player to get a new one
+		GameServer()->OnZombieKill(GetCID());//remove the player to get a new one
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int Weapon)
@@ -659,7 +659,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int W
 
 	CPlayer *pFrom = GameServer()->m_apPlayers[From];
 
-	if(From == m_pPlayer->GetCID())
+	if(From == GetCID())
 	{
 		if(!m_pPlayer->GetZomb())
 			return false;
@@ -709,7 +709,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int W
 	m_DamageTakenTick = Server()->Tick();
 
 	// do damage Hit sound
-	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
+	if(From >= 0 && From != GetCID() && GameServer()->m_apPlayers[From])
 	{
 		std::bitset<MAX_CLIENTS> Mask = CmaskOne(From);
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -724,7 +724,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int W
 	if(m_Health <= 0)
 	{
 		// set attacker's face to happy (taunt!)
-		if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
+		if (From >= 0 && From != GetCID() && GameServer()->m_apPlayers[From])
 		{
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)
@@ -752,7 +752,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int W
 
 void CCharacter::Snap(int SnappingClient)
 {
-	int Id = m_pPlayer->GetCID();
+	int Id = GetCID();
 
 	if (!Server()->Translate(Id, SnappingClient))
 		return;
@@ -842,8 +842,8 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_Direction = m_Input.m_Direction;
 
-	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
+	if(GetCID() == SnappingClient || SnappingClient == -1 ||
+		(!g_Config.m_SvStrictSpectateMode && GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
 	{
 		pCharacter->m_Health = m_Health;
 		pCharacter->m_Armor = m_Armor;
@@ -924,14 +924,23 @@ void CCharacter::HandleZones()
 	Indices.Add(Data2.Index);
 	Indices.Add(Data3.Index);
 
-	if(Indices.Contains(ZONE_LASTDAY_DEATH) && GameLayerClipped(m_Pos))
-		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+	if(Indices.Contains(ZONE_LASTDAY_DEATH) || GameLayerClipped(m_Pos))
+	{
+		Die(GetCID(), WEAPON_WORLD);
+		return;
+	}
 	if(Indices.Contains(ZONE_LASTDAY_FREEZE))
+	{
 		Freeze(g_Config.m_SvFreezeTime, FREEZEREASON_FREEZE_ZONE);
+		return;
+	}
 	if(Indices.Contains(ZONE_LASTDAY_UNFREEZE))
+	{
 		Unfreeze();
+		return;
+	}
 
-	//HandleTeleports();
+	HandleTeleports();
 }
 
 int CCharacter::GetZoneValueAt(int ZoneHandle, const vec2 &Pos, ZoneData *pData)
@@ -1128,9 +1137,6 @@ void CCharacter::DoZombieAction()
 		m_Input.m_Fire = 0;
 		m_LatestPrevInput.m_Fire = 0;
 	}
-
-	if(TileSafe(m_Pos.x, m_Pos.y) == -1)
-		Die(-1, WEAPON_SELF);
 	return;
 }
 
@@ -1170,5 +1176,10 @@ int CCharacter::TileSafe(float x, float y)
 	}
 
 	return 2;
+}
+
+int CCharacter::GetCID()
+{
+	return m_pPlayer->GetCID();
 }
 /*  Last Day End  */
