@@ -1103,9 +1103,6 @@ void CCharacter::DoZombieAction()
 		i++;
 	}
 
-	if(TileSafe(m_Pos.x, m_Pos.y) == -1)
-		Die(-1, WEAPON_SELF);
-
 	if(!m_AI.m_FireTick)
 	{
 		m_Input.m_Fire = 1;
@@ -1131,6 +1128,9 @@ void CCharacter::DoZombieAction()
 		m_Input.m_Fire = 0;
 		m_LatestPrevInput.m_Fire = 0;
 	}
+
+	if(TileSafe(m_Pos.x, m_Pos.y) == -1)
+		Die(-1, WEAPON_SELF);
 	return;
 }
 
