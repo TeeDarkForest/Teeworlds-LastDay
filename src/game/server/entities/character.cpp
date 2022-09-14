@@ -931,7 +931,7 @@ void CCharacter::HandleZones()
 	if(Indices.Contains(ZONE_LASTDAY_UNFREEZE))
 		Unfreeze();
 
-	HandleTeleports();
+	//HandleTeleports();
 }
 
 int CCharacter::GetZoneValueAt(int ZoneHandle, const vec2 &Pos, ZoneData *pData)
