@@ -924,7 +924,7 @@ void CCharacter::HandleZones()
 	Indices.Add(Data2.Index);
 	Indices.Add(Data3.Index);
 
-	if(Indices.Contains(ZONE_LASTDAY_DEATH))
+	if(Indices.Contains(ZONE_LASTDAY_DEATH) && GameLayerClipped(m_Pos))
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	if(Indices.Contains(ZONE_LASTDAY_FREEZE))
 		Freeze(g_Config.m_SvFreezeTime, FREEZEREASON_FREEZE_ZONE);
