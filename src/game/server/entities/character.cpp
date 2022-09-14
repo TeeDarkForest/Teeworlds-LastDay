@@ -1053,11 +1053,9 @@ void CCharacter::DoZombieAction()
 
 	if(pVim->m_Pos.x < m_Pos.x)
 	{
-		if(TileSafe(m_Pos.x + m_Core.m_Vel.x, m_Pos.y) == 1)
-			m_Input.m_Direction = -1;
-	}else if(pVim->m_Pos.x > m_Pos.x && 
-		TileSafe(m_Pos.x + m_Core.m_Vel.x, m_Pos.y) == 1)
-			m_Input.m_Direction = 1;
+		m_Input.m_Direction = -1;
+	}else if(pVim->m_Pos.x > m_Pos.x)
+		m_Input.m_Direction = 1;
 
 	m_Input.m_Jump = 0;
 	
