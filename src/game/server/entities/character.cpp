@@ -1164,7 +1164,7 @@ int CCharacter::TileSafe(float x, float y)
 			break;
 		case ZONE_NULL: if(!GameServer()->Collision()->CheckPoint(x, y)) return 1;
 	}
-	if(y > GameServer()->Collision()->GetHeight())
+	if(y/32.0 > GameServer()->Collision()->GetHeight())
 	{
 		return -1;
 	}
