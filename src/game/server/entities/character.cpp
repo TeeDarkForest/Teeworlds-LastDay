@@ -1093,7 +1093,7 @@ void CCharacter::DoZombieAction()
 
 	while(!m_Input.m_Jump)
 	{
-		if(TileSafe(m_Pos.x, m_Pos.y + i * 32) < 1)
+		if(TileSafe(m_Pos.x, m_Pos.y + i * 32) == 0)
 		{
 			m_Input.m_Jump = 1;
 		}
@@ -1103,6 +1103,9 @@ void CCharacter::DoZombieAction()
 		}
 		i++;
 	}
+
+	if(TileSafe(m_Pos.x, m_Pos.y) == -1)
+		Die(-1, WEAPON_SELF);
 
 	if(!m_AI.m_FireTick)
 	{
