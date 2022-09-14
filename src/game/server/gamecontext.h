@@ -8,6 +8,7 @@
 #include <engine/shared/memheap.h>
 
 #include <teeuniverses/components/localization.h>
+#include "lastday/weapon.h"
 
 #include <game/layers.h>
 #include <game/voting.h>
@@ -16,6 +17,8 @@
 #include "gamecontroller.h"
 #include "gameworld.h"
 #include "player.h"
+
+#include <bitset>
 
 #ifdef _MSC_VER
 typedef __int32 int32_t;
@@ -89,8 +92,7 @@ public:
 	int m_ChatResponseTargetID;
 	int m_ChatPrintCBIndex;
 public:
-	int m_ZoneHandle_TeeWorlds;
-
+	int m_ZoneHandle_LastDay;
 public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
@@ -141,12 +143,18 @@ public:
 	CVoteOptionServer *m_pVoteOptionLast;
 
 	// helper functions
-	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, int64_t Mask=-1LL);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, int64_t Mask=-1LL);
-	void CreateHammerHit(vec2 Pos, int64_t Mask=-1LL);
-	void CreatePlayerSpawn(vec2 Pos, int64_t Mask=-1LL);
-	void CreateDeath(vec2 Pos, int Who, int64_t Mask=-1LL);
-	void CreateSound(vec2 Pos, int Sound, int64_t Mask=-1LL);
+	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
+	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, std::bitset<MAX_CLIENTS> const& Mask);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, std::bitset<MAX_CLIENTS> const& Mask);
+	void CreateHammerHit(vec2 Pos);
+	void CreateHammerHit(vec2 Pos, std::bitset<MAX_CLIENTS> const& Mask);
+	void CreatePlayerSpawn(vec2 Pos);
+	void CreatePlayerSpawn(vec2 Pos, std::bitset<MAX_CLIENTS> const& Mask);
+	void CreateDeath(vec2 Pos, int Who);
+	void CreateDeath(vec2 Pos, int Who, std::bitset<MAX_CLIENTS> const& Mask);
+	void CreateSound(vec2 Pos, int Sound);
+	void CreateSound(vec2 Pos, int Sound, std::bitset<MAX_CLIENTS> const& Mask);
 	void CreateSoundGlobal(int Sound, int Target=-1);
 
 
@@ -203,11 +211,23 @@ public:
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
+private:
+	IWeapon *m_apLastDayWeapons[NUM_LD_WEAPONS];
+public:
+/* Last Day Start */
+	void OnZombie(int ClientID, int Attack);
+	void OnZombieKill(int ClientID);
+	int NumZombiesAlive();
+
+	void InitWeapon();
+	IWeapon *GetLastDayWeapon(int WeaponID);
+/*  Last Day End  */
 };
 
-inline int64_t CmaskAll() { return -1LL; }
-inline int64_t CmaskOne(int ClientID) { return 1LL<<ClientID; }
-inline int64_t CmaskAllExceptOne(int ClientID) { return CmaskAll()^CmaskOne(ClientID); }
-inline bool CmaskIsSet(int64_t Mask, int ClientID) { return (Mask&CmaskOne(ClientID)) != 0; }
 
+std::bitset<MAX_CLIENTS> const& CmaskAll();
+std::bitset<MAX_CLIENTS> CmaskOne(int ClientID);
+std::bitset<MAX_CLIENTS> CmaskAllExceptOne(int ClientID);
+
+inline bool CmaskIsSet(std::bitset<MAX_CLIENTS> const& Mask, int ClientID) { return Mask[ClientID]; }
 #endif

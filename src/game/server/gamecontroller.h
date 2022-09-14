@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_GAMECONTROLLER_H
 #define GAME_SERVER_GAMECONTROLLER_H
 
+#include <base/tl/array.h>
 #include <base/vmath.h>
 
 #ifdef _MSC_VER
@@ -21,8 +22,6 @@ typedef unsigned __int64 uint64_t;
 */
 class IGameController
 {
-	vec2 m_aaSpawnPoints[3][64];
-	int m_aNumSpawnPoints[3];
 
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
@@ -30,6 +29,7 @@ class IGameController
 protected:
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const { return m_pServer; }
+	array<vec2> m_aaSpawnPoints[3];
 
 	struct CSpawnEval
 	{
@@ -155,6 +155,8 @@ public:
 	virtual void PostReset();
 
 	double GetTime();
+	//Zomb2
+	virtual void CheckZombie();
 };
 
 #endif

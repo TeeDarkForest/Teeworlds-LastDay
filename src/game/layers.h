@@ -20,6 +20,7 @@ class CLayers
 
 public:
 	CLayers();
+	void Init(class IMap *pMap);
 	void Init(class IKernel *pKernel);
 	int NumGroups() const { return m_GroupsNum; };
 	class IMap *Map() const { return m_pMap; };
@@ -29,6 +30,14 @@ public:
 	CMapItemLayerTilemap *GameLayer() const { return m_pGameLayer; };
 	CMapItemGroup *GetGroup(int Index) const;
 	CMapItemLayer *GetLayer(int Index) const;
+
+	// DDRace
+
+	CMapItemLayerTilemap *TeleLayer() const { return m_pTeleLayer; }
+	CMapItemLayerTilemap *SpeedupLayer() const { return m_pSpeedupLayer; }
+private:
+	CMapItemLayerTilemap *m_pTeleLayer;
+	CMapItemLayerTilemap *m_pSpeedupLayer;
 };
 
 #endif

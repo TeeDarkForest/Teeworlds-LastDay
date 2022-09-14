@@ -403,6 +403,11 @@ void CServer::Kick(int ClientID, const char *pReason)
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "invalid client id to kick");
 		return;
 	}
+	else if(m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
+	{
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "you can't kick zombies");
+		return;
+	}
 	else if(m_RconClientID == ClientID)
 	{
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "you can't kick yourself");
@@ -485,7 +490,9 @@ const char *CServer::ClientName(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 		return "(invalid)";
-	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
+	if(m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
+		return "Zombie";//needed
+	else if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
 		return m_aClients[ClientID].m_aName;
 	else
 		return "(connecting)";
@@ -496,7 +503,7 @@ const char *CServer::ClientClan(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 		return "";
-	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
+	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME || m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
 		return m_aClients[ClientID].m_aClan;
 	else
 		return "";
@@ -506,7 +513,7 @@ int CServer::ClientCountry(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 		return -1;
-	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
+	if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME || m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
 		return m_aClients[ClientID].m_Country;
 	else
 		return -1;
@@ -993,7 +1000,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			m_aClients[ClientID].m_CurrentInput %= 200;
 
 			// call the mod with the fresh input data
-			if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
+			if(m_aClients[ClientID].m_State == CClient::STATE_INGAME || m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
 				GameServer()->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 		}
 		else if(Msg == NETMSG_RCON_CMD)
@@ -1170,7 +1177,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool Sen
 	int PlayerCount = 0, ClientCount = 0;
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+		if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_State != CClient::STATE_ZOMB)
 		{
 			if(GameServer()->IsClientPlayer(i))
 				PlayerCount++;
@@ -1237,7 +1244,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool Sen
 	// flags
 	ADD_INT(p, g_Config.m_Password[0] ? SERVER_FLAG_PASSWORD : 0);
 
-	int MaxClients = m_NetServer.MaxClients();
+	int MaxClients = max(1, m_NetServer.MaxClients()-g_Config.m_LastDayMaxZombNum);
 	if(Type == SERVERINFO_VANILLA || Type == SERVERINFO_INGAME)
 	{
 		if(ClientCount >= VANILLA_MAX_CLIENTS)
@@ -1322,7 +1329,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool Sen
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+		if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_State != CClient::STATE_ZOMB)
 		{
 			if(ClientCount == 0)
 				break;
@@ -1632,7 +1639,7 @@ int CServer::Run()
 					{
 						if(m_aClients[c].m_aInputs[i].m_GameTick == Tick())
 						{
-							if(m_aClients[c].m_State == CClient::STATE_INGAME)
+							if(m_aClients[c].m_State == CClient::STATE_INGAME || m_aClients[c].m_State == CClient::STATE_ZOMB)
 								GameServer()->OnClientPredictedInput(c, m_aClients[c].m_aInputs[i].m_aData);
 							break;
 						}
@@ -2029,4 +2036,9 @@ int main(int argc, const char **argv) // ignore_convention
 	delete pStorage;
 	delete pConfig;
 	return 0;
+}
+
+void CServer::InitZomb(int ClientID)
+{
+	m_aClients[ClientID].m_State = CClient::STATE_ZOMB;
 }

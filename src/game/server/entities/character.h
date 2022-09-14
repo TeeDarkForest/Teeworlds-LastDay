@@ -7,6 +7,8 @@
 #include <game/generated/server_data.h>
 #include <game/generated/protocol.h>
 
+#include <game/server/lastday/define.h>
+
 #include <game/gamecore.h>
 
 enum
@@ -14,6 +16,11 @@ enum
 	WEAPON_GAME = -3, // team switching etc
 	WEAPON_SELF = -2, // console kill command
 	WEAPON_WORLD = -1, // death tiles etc
+};
+
+enum
+{
+	FREEZEREASON_FREEZE_ZONE=0,
 };
 
 class CCharacter : public CEntity
@@ -25,6 +32,7 @@ public:
 	static const int ms_PhysSize = 28;
 
 	CCharacter(CGameWorld *pWorld);
+	~CCharacter();
 
 	virtual void Reset();
 	virtual void Destroy();
@@ -47,8 +55,8 @@ public:
 	void ResetInput();
 	void FireWeapon();
 
-	void Die(int Killer, int Weapon);
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);
+	void Die(int Killer, int ShowWeapon, int Weapon=-1);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int ShowWeapon, int Weapon=-1);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
 	bool Remove();
@@ -56,7 +64,7 @@ public:
 	bool IncreaseHealth(int Amount);
 	bool IncreaseArmor(int Amount);
 
-	bool GiveWeapon(int Weapon, int Ammo);
+	void GiveWeapon(int WeaponID, int Ammo);
 	void GiveNinja();
 
 	void SetEmote(int Emote, int Tick);
@@ -70,18 +78,19 @@ private:
 
 	bool m_Alive;
 
+	int m_FakeIDs[13];
+	int m_FreezeHelpID;
+
 	// weapon info
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;
 
+public:
+
 	struct WeaponStat
 	{
-		int m_AmmoRegenStart;
 		int m_Ammo;
-		int m_Ammocost;
-		bool m_Got;
-
-	} m_aWeapons[NUM_WEAPONS];
+	} m_aWeapons[NUM_LD_WEAPONS];
 
 	int m_ActiveWeapon;
 	int m_LastWeapon;
@@ -106,6 +115,7 @@ private:
 	// input
 	CNetObj_PlayerInput m_PrevInput;
 	CNetObj_PlayerInput m_Input;
+
 	int m_NumInputs;
 	int m_Jumped;
 
@@ -123,6 +133,12 @@ private:
 		int m_OldVelAmount;
 	} m_Ninja;
 
+	void Teleport(vec2 Pos);
+
+	void Freeze(float Time, int Reason);
+	bool IsFrozen() const;
+	void Unfreeze();
+
 	// the player core for the physics
 	CCharacterCore m_Core;
 
@@ -130,6 +146,37 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
+
+	int m_FrozenTime;
+public:
+	/* Last Day Start */
+	bool m_RealSnapPlayer[MAX_CLIENTS];
+	/*  Last Day End  */
+private:
+	//zomb2
+	vec2 GetGrenadeAngle(vec2 m_StartPos, vec2 m_ToShoot);
+	/* Last Day Start */
+	void DoZombieAction();
+	/*
+		Tile Safe:
+		-1 = not in map = not safe(stop the safe check)
+		0 = not safe = freeze or death
+		1 = maybe safe = air
+		2 = safe = soild or other
+	*/
+	int TileSafe(float x, float y);
+	struct 
+	{
+		int m_JumpedTick;
+		int m_FireTick;
+	} m_AI;
+
+	void HandleZones();
+	int GetZoneValueAt(int ZoneHandle, const vec2 &Pos, ZoneData *pData = nullptr);
+	void HandleTeleports();
+	void TeleToId(int TeleNumber, int TeleType);
+	void UpdateTuningParam();
+	/*  Last Day End  */
 
 };
 

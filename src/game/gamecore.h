@@ -11,6 +11,8 @@
 #include <engine/shared/protocol.h>
 #include <game/generated/protocol.h>
 
+#include "mapitems.h"
+
 
 class CTuneParam
 {
@@ -167,6 +169,13 @@ enum
 	COREEVENT_HOOK_HIT_NOHOOK=0x20,
 	COREEVENT_HOOK_RETRACT=0x40,
 };
+// freeze state
+enum
+{
+	FREEZESTATE_NOFREEZE=0,
+	FREEZESTATE_NORMAL,
+	FREEZESTATE_DEEP,
+};
 
 class CWorldCore
 {
@@ -182,6 +191,18 @@ public:
 
 class CCharacterCore
 {
+public:
+	struct CParams : public CTuningParams
+	{
+		const CTuningParams* m_pTuningParams;
+		
+		CParams(const CTuningParams* pTuningParams)
+		{
+			m_pTuningParams = pTuningParams;
+		}
+	};
+
+private:
 	CWorldCore *m_pWorld;
 	CCollision *m_pCollision;
 public:
@@ -193,6 +214,7 @@ public:
 	int m_HookTick;
 	int m_HookState;
 	int m_HookedPlayer;
+	int m_FreezeState;
 
 	int m_Jumped;
 
@@ -204,12 +226,14 @@ public:
 
 	void Init(CWorldCore *pWorld, CCollision *pCollision);
 	void Reset();
-	void Tick(bool UseInput, const CTuningParams* pTuningParams);
-	void Move(const CTuningParams* pTuningParams);
+	void Tick(bool UseInput, CParams* pParams);
+	void Move(CParams* pParams);
 
 	void Read(const CNetObj_CharacterCore *pObjCore);
 	void Write(CNetObj_CharacterCore *pObjCore);
 	void Quantize();
+
+	bool m_Zooker;
 };
 
 #endif

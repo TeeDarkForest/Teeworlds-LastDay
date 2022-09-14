@@ -72,10 +72,15 @@ void CCharacterCore::Reset()
 	m_HookedPlayer = -1;
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
+	//Zomb2
+	m_Zooker = false;
+	//lastday
+	m_FreezeState = FREEZESTATE_NOFREEZE;
 }
 
-void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
+void CCharacterCore::Tick(bool UseInput, CParams* pParams)
 {
+	const CTuningParams* pTuningParams = pParams->m_pTuningParams;
 	float PhysSize = 28.0f;
 	m_TriggeredEvents = 0;
 
@@ -200,7 +205,7 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0);
 		if(Hit)
 		{
-			if(Hit&CCollision::COLFLAG_NOHOOK)
+			if(Hit == TILE_NOHOOK)
 				GoingToRetract = true;
 			else
 				GoingToHitGround = true;
@@ -294,7 +299,7 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 
 		// release hook (max hook time is 1.25
 		m_HookTick++;
-		if(m_HookedPlayer != -1 && (m_HookTick > SERVER_TICK_SPEED+SERVER_TICK_SPEED/5 || !m_pWorld->m_apCharacters[m_HookedPlayer]))
+		if(m_HookedPlayer != -1 && !m_Zooker && (m_HookTick > SERVER_TICK_SPEED+SERVER_TICK_SPEED/5 || !m_pWorld->m_apCharacters[m_HookedPlayer]))
 		{
 			m_HookedPlayer = -1;
 			m_HookState = HOOK_RETRACTED;
@@ -356,8 +361,10 @@ void CCharacterCore::Tick(bool UseInput, const CTuningParams* pTuningParams)
 		m_Vel = normalize(m_Vel) * 6000;
 }
 
-void CCharacterCore::Move(const CTuningParams* pTuningParams)
+void CCharacterCore::Move(CParams* pParams)
 {
+	const CTuningParams* pTuningParams = pParams->m_pTuningParams;
+	
 	float RampValue = VelocityRamp(length(m_Vel)*50, pTuningParams->m_VelrampStart, pTuningParams->m_VelrampRange, pTuningParams->m_VelrampCurvature);
 
 	m_Vel.x = m_Vel.x*RampValue;

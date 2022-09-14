@@ -9,9 +9,18 @@
 #include <game/version.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
-#include "gamemodes/mod.h"
+#include "lastday/ldgamecontroller.h"
 
 #include <teeuniverses/components/localization.h>
+
+#include "lastday/weapons/hammer.h"
+#include "lastday/weapons/gun.h"
+#include "lastday/weapons/shotgun.h"
+#include "lastday/weapons/grenade.h"
+#include "lastday/weapons/rifle.h"
+#include "lastday/weapons/ninja.h"
+
+#include "lastday/weapons/hammer-plus.h"
 
 enum
 {
@@ -71,6 +80,12 @@ void CGameContext::Clear()
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
 
+	for(int i = 0;i < NUM_LD_WEAPONS;i ++)
+	{
+		delete m_apLastDayWeapons[i];
+		m_apLastDayWeapons[i] = 0;
+	}
+
 	m_Resetting = true;
 	this->~CGameContext();
 	mem_zero(this, sizeof(*this));
@@ -91,7 +106,12 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 	return m_apPlayers[ClientID]->GetCharacter();
 }
 
-void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int64_t Mask)
+void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount)
+{
+	CreateDamageInd(Pos, Angle, Amount, CmaskAll());
+}
+
+void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	float a = 3 * 3.14159f / 2 + Angle;
 	//float a = get_angle(dir);
@@ -110,7 +130,12 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int64_t Ma
 	}
 }
 
-void CGameContext::CreateHammerHit(vec2 Pos, int64_t Mask)
+void CGameContext::CreateHammerHit(vec2 Pos)
+{
+	CreateHammerHit(Pos, CmaskAll());
+}
+
+void CGameContext::CreateHammerHit(vec2 Pos, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	// create the event
 	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), Mask);
@@ -121,8 +146,12 @@ void CGameContext::CreateHammerHit(vec2 Pos, int64_t Mask)
 	}
 }
 
+void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage)
+{
+	CreateExplosion(Pos, Owner, Weapon, NoDamage, CmaskAll());
+}
 
-void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, int64_t Mask)
+void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion), Mask);
@@ -154,19 +183,12 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 	}
 }
 
-/*
-void create_smoke(vec2 Pos)
+void CGameContext::CreatePlayerSpawn(vec2 Pos)
 {
-	// create the event
-	EV_EXPLOSION *pEvent = (EV_EXPLOSION *)events.create(EVENT_SMOKE, sizeof(EV_EXPLOSION));
-	if(pEvent)
-	{
-		pEvent->x = (int)Pos.x;
-		pEvent->y = (int)Pos.y;
-	}
-}*/
+	CreatePlayerSpawn(Pos, CmaskAll());
+}
 
-void CGameContext::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
+void CGameContext::CreatePlayerSpawn(vec2 Pos, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	// create the event
 	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
@@ -177,7 +199,12 @@ void CGameContext::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
 	}
 }
 
-void CGameContext::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
+void CGameContext::CreateDeath(vec2 Pos, int ClientID)
+{
+	CreateDeath(Pos, ClientID, CmaskAll());
+}
+
+void CGameContext::CreateDeath(vec2 Pos, int ClientID, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	// create the event
 	CNetEvent_Death *pEvent = (CNetEvent_Death *)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death), Mask);
@@ -189,7 +216,12 @@ void CGameContext::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 	}
 }
 
-void CGameContext::CreateSound(vec2 Pos, int Sound, int64_t Mask)
+void CGameContext::CreateSound(vec2 Pos, int Sound)
+{
+	CreateSound(Pos, Sound, CmaskAll());
+}
+
+void CGameContext::CreateSound(vec2 Pos, int Sound, std::bitset<MAX_CLIENTS> const& Mask)
 {
 	if (Sound < 0)
 		return;
@@ -224,7 +256,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 
 void CGameContext::SendMotd(int To, const char* pText)
 {
-	if(m_apPlayers[To])
+	if(m_apPlayers[To] && !m_apPlayers[To]->GetZomb())
 	{
 		CNetMsg_Sv_Motd Msg;
 		
@@ -249,7 +281,7 @@ void CGameContext::SendChatTarget(int To, const char *pText, ...)
 	
 	for(int i = Start; i < End; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && !m_apPlayers[i]->GetZomb())
 		{
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -343,7 +375,7 @@ void CGameContext::SendBroadcast_VL(const char *pText, int ClientID, ...)
 
 	for(int i = Start; i < End; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && !m_apPlayers[i]->GetZomb())
 		{
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), _(pText), VarArgs);
@@ -1716,14 +1748,17 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_Collision.Init(&m_Layers);
 
 	//Get zones
-	m_ZoneHandle_TeeWorlds = m_Collision.GetZoneHandle("teeworlds");
+	m_ZoneHandle_LastDay = m_Collision.GetZoneHandle("lastday");
 
 	// reset everything here
 	//world = new GAMEWORLD;
 	//players = new CPlayer[MAX_CLIENTS];
 
 	// select gametype
-	m_pController = new CGameControllerMOD(this);
+	m_pController = new CLastDayGameController(this);
+
+	// init weapon
+	InitWeapon();
 
 	// setup core world
 	//for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1765,30 +1800,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 						break;
 					case ENTITY_SPAWN_BLUE:
 						m_pController->OnEntity("buleSpawn", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_FLAGSTAND_RED:
-						m_pController->OnEntity("redFlag", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_FLAGSTAND_BLUE:
-						m_pController->OnEntity("buleFlag", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_ARMOR:
-						m_pController->OnEntity("armor", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_HEALTH:
-						m_pController->OnEntity("health", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_WEAPON_SHOTGUN:
-						m_pController->OnEntity("shotgun", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_WEAPON_GRENADE:
-						m_pController->OnEntity("grenade", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_POWERUP_NINJA:
-						m_pController->OnEntity("ninja", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_WEAPON_RIFLE:
-						m_pController->OnEntity("rifle", Pivot, P0, P1, P2, P3, -1);
 						break;
 				}
 			}
@@ -1885,8 +1896,75 @@ bool CGameContext::IsClientPlayer(int ClientID)
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 
+std::bitset<MAX_CLIENTS> const& CmaskAll() { static std::bitset<MAX_CLIENTS> bs; static bool init = false; if (!init) { init = true; bs.set(); } return bs; }
+std::bitset<MAX_CLIENTS> CmaskOne(int ClientID) { std::bitset<MAX_CLIENTS> bs; bs[ClientID] = 1; return bs; }
+std::bitset<MAX_CLIENTS> CmaskAllExceptOne(int ClientID) { std::bitset<MAX_CLIENTS> bs; bs.set(); bs[ClientID] = 0; return bs; }
+
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }
 const char *CGameContext::Version() { return GAME_VERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
+
+void CGameContext::OnZombie(int ClientID, int Attack)
+{
+	if(ClientID >= MAX_CLIENTS || m_apPlayers[ClientID])
+		return;
+
+	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, 0, 1, Attack);
+	
+	Server()->InitZomb(ClientID);
+	m_apPlayers[ClientID]->TryRespawn();
+}
+
+void CGameContext::OnZombieKill(int ClientID)
+{
+	if(m_apPlayers[ClientID])
+		delete m_apPlayers[ClientID];
+	m_apPlayers[ClientID] = 0;
+	
+	// update spectator modes
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == ClientID)
+			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+	}
+}
+
+int CGameContext::NumZombiesAlive()
+{
+	int NumZombies=0;
+	for(int i = 0;i<MAX_CLIENTS;i++)
+	{
+		if(m_apPlayers[i])
+			if(m_apPlayers[i]->GetCharacter())
+				if(m_apPlayers[i]->GetCharacter()->IsAlive())
+					if(m_apPlayers[i]->GetZomb())
+						NumZombies++;
+	}
+	return NumZombies;
+}
+
+/* Last Day Start */
+void CGameContext::InitWeapon()
+{
+	m_apLastDayWeapons[TWS_WEAPON_HAMMER] = new CWeaponHammer(this);
+	m_apLastDayWeapons[TWS_WEAPON_GUN] = new CWeaponGun(this);
+	m_apLastDayWeapons[TWS_WEAPON_SHOTGUN] = new CWeaponShotgun(this);
+	m_apLastDayWeapons[TWS_WEAPON_GRENADE] = new CWeaponGrenade(this);
+	m_apLastDayWeapons[TWS_WEAPON_RIFLE] = new CWeaponRifle(this);
+	m_apLastDayWeapons[TWS_WEAPON_NINJA] = new CWeaponNinja(this);
+	
+	m_apLastDayWeapons[LD_WEAPON_HAMMER_PLUS] = new CWeaponHammerPlus(this);
+}
+
+IWeapon *CGameContext::GetLastDayWeapon(int WeaponID)
+{
+	if(WeaponID < TWS_WEAPON_HAMMER && WeaponID >= NUM_LD_WEAPONS)
+		return 0;
+	if(!m_apLastDayWeapons[WeaponID])
+		return 0;
+	return m_apLastDayWeapons[WeaponID];
+}
+
+/*  Last Day End  */

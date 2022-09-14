@@ -6,6 +6,27 @@
 #include <base/vmath.h>
 #include <base/tl/array.h>
 
+#include <map>
+#include <vector>
+
+enum
+{
+	CANTMOVE_LEFT = 1 << 0,
+	CANTMOVE_RIGHT = 1 << 1,
+	CANTMOVE_UP = 1 << 2,
+	CANTMOVE_DOWN = 1 << 3,
+};
+
+vec2 ClampVel(int MoveRestriction, vec2 Vel);
+
+typedef bool (*CALLBACK_SWITCHACTIVE)(int Number, void *pUser);
+
+struct ZoneData
+{
+	int Index = -1;
+	int ExtraData = -1;
+};
+
 class CCollision
 {
 	class CTile *m_pTiles;
@@ -17,20 +38,17 @@ class CCollision
 
 	array< array<int> > m_Zones;
 
-	bool IsTileSolid(int x, int y);
-	int GetTile(int x, int y);
+	bool IsSolid(int x, int y) const;
+	int GetTile(int x, int y) const;
 
 public:
-	enum
-	{
-		COLFLAG_SOLID=1,
-		COLFLAG_DEATH=2,
-		COLFLAG_NOHOOK=4,
-	};
 
 	CCollision();
+	~CCollision();
 	void Init(class CLayers *pLayers);
-	bool CheckPoint(float x, float y) { return IsTileSolid(round_to_int(x), round_to_int(y)); }
+	void InitTeleports();
+
+	bool CheckPoint(float x, float y) { return IsSolid(round_to_int(x), round_to_int(y)); }
 	bool CheckPoint(vec2 Pos) { return CheckPoint(Pos.x, Pos.y); }
 	int GetCollisionAt(float x, float y) { return GetTile(round_to_int(x), round_to_int(y)); }
 	int GetWidth() { return m_Width; };
@@ -40,11 +58,49 @@ public:
 	void MoveBox(vec2 *pInoutPos, vec2 *pInoutVel, vec2 Size, float Elasticity);
 	bool TestBox(vec2 Pos, vec2 Size);
 
+	void Dest();
+
+	int GetMoveRestrictions(CALLBACK_SWITCHACTIVE pfnSwitchActive, void *pUser, vec2 Pos, float Distance = 18.0f, int OverrideCenterTileIndex = -1);
+	int GetMoveRestrictions(vec2 Pos, float Distance = 18.0f)
+	{
+		return GetMoveRestrictions(0, 0, Pos, Distance);
+	}
+
 	void SetTime(double Time) { m_Time = Time; }
 
 	//This function return an Handle to access all zone layers with the name "pName"
 	int GetZoneHandle(const char* pName);
-	int GetZoneValueAt(int ZoneHandle, float x, float y);
+	int GetZoneValueAt(int ZoneHandle, float x, float y, ZoneData *pData = nullptr);
+	int GetZoneValueAt(int ZoneHandle, vec2 Pos, ZoneData *pData = nullptr) { return GetZoneValueAt(ZoneHandle, Pos.x, Pos.y, pData); }
+
+/* INFECTION MODIFICATION START ***************************************/
+	bool AreConnected(vec2 Pos1, vec2 Pos2, float Radius);
+/* INFECTION MODIFICATION END *****************************************/
+
+	int GetPureMapIndex(float x, float y) const;
+	int GetPureMapIndex(vec2 Pos) const { return GetPureMapIndex(Pos.x, Pos.y); }
+	int GetMapIndex(vec2 Pos) const;
+	bool TileExists(int Index) const;
+	bool TileExistsNext(int Index) const;
+	vec2 GetPos(int Index) const;
+	int GetTileIndex(int Index) const;
+	int GetTileFlags(int Index) const;
+
+	int IsSpeedup(int Index) const;
+	void GetSpeedup(int Index, vec2 *Dir, int *Force, int *MaxSpeed) const;
+	
+	bool EmptyOnLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision);
+
+	class CTeleTile *TeleLayer() { return m_pTele; }
+	class CLayers *Layers() { return m_pLayers; }
+
+	const std::map<int, std::vector<vec2>> &GetTeleOuts() const { return m_TeleOuts; }
+
+private:
+	class CTeleTile *m_pTele;
+	std::map<int, std::vector<vec2>> m_TeleOuts;
+
+	class CSpeedupTile *m_pSpeedup;
 };
 
 #endif

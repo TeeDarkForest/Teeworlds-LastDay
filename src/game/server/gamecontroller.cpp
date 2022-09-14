@@ -5,7 +5,6 @@
 
 #include <game/generated/protocol.h>
 
-#include "entities/pickup.h"
 #include "gamecontroller.h"
 #include "gamecontext.h"
 
@@ -17,7 +16,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_pGameType = "unknown";
 
 	//
-	DoWarmup(g_Config.m_SvWarmup);
+	m_Warmup = 0;
 	m_UnpauseTimer = 0;
 	m_GameOverTick = -1;
 	m_SuddenDeath = 0;
@@ -30,10 +29,6 @@ IGameController::IGameController(class CGameContext *pGameServer)
 
 	m_UnbalancedTick = -1;
 	m_ForceBalanced = false;
-
-	m_aNumSpawnPoints[0] = 0;
-	m_aNumSpawnPoints[1] = 0;
-	m_aNumSpawnPoints[2] = 0;
 }
 
 IGameController::~IGameController()
@@ -61,7 +56,7 @@ float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos)
 void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type)
 {
 	// get spawn point
-	for(int i = 0; i < m_aNumSpawnPoints[Type]; i++)
+	for(int i = 0; i < m_aaSpawnPoints[Type].size(); i++)
 	{
 		// check if the position is occupado
 		CCharacter *aEnts[MAX_CLIENTS];
@@ -83,6 +78,10 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type)
 			continue;	// try next spawn point
 
 		vec2 P = m_aaSpawnPoints[Type][i]+Positions[Result];
+		if(GameServer()->Collision()->CheckPoint(P))
+		{
+			continue; // you cant spawn in the wall, right?
+		}
 		float S = EvaluateSpawnPos(pEval, P);
 		if(!pEval->m_Got || pEval->m_Score > S)
 		{
@@ -100,26 +99,10 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos)
 	// spectators can't spawn
 	if(Team == TEAM_SPECTATORS)
 		return false;
-
-	if(IsTeamplay())
-	{
-		Eval.m_FriendlyTeam = Team;
-
-		// first try own team spawn, then normal spawn and then enemy
-		EvaluateSpawnType(&Eval, 1+(Team&1));
-		if(!Eval.m_Got)
-		{
-			EvaluateSpawnType(&Eval, 0);
-			if(!Eval.m_Got)
-				EvaluateSpawnType(&Eval, 1+((Team+1)&1));
-		}
-	}
-	else
-	{
-		EvaluateSpawnType(&Eval, 0);
-		EvaluateSpawnType(&Eval, 1);
-		EvaluateSpawnType(&Eval, 2);
-	}
+	
+	EvaluateSpawnType(&Eval, 0);
+	EvaluateSpawnType(&Eval, 1);
+	EvaluateSpawnType(&Eval, 2);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -133,42 +116,11 @@ bool IGameController::OnEntity(const char* pName, vec2 Pivot, vec2 P0, vec2 P1, 
 	int SubType = 0;
 
 	if(str_comp(pName, "spawn") == 0)
-		m_aaSpawnPoints[0][m_aNumSpawnPoints[0]++] = Pos;
+		m_aaSpawnPoints[0].add(Pos);
 	else if(str_comp(pName, "redSpawn") == 0)
-		m_aaSpawnPoints[1][m_aNumSpawnPoints[1]++] = Pos;
+		m_aaSpawnPoints[1].add(Pos);
 	else if(str_comp(pName, "buleSpawn") == 0)
-		m_aaSpawnPoints[2][m_aNumSpawnPoints[2]++] = Pos;
-	else if(str_comp(pName, "armor") == 0)
-		Type = POWERUP_ARMOR;
-	else if(str_comp(pName, "health") == 0)
-		Type = POWERUP_HEALTH;
-	else if(str_comp(pName, "shotgun") == 0)
-	{
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_SHOTGUN;
-	}
-	else if(str_comp(pName, "grenade") == 0)
-	{
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_GRENADE;
-	}
-	else if(str_comp(pName, "rifle") == 0)
-	{
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_RIFLE;
-	}
-	else if(str_comp(pName, "ninja") == 0 && g_Config.m_SvPowerups)
-	{
-		Type = POWERUP_NINJA;
-		SubType = WEAPON_NINJA;
-	}
-
-	if(Type != -1)
-	{
-		CPickup *pPickup = new CPickup(&GameServer()->m_World, Type, SubType, Pivot, Pos - Pivot, PosEnv);
-		pPickup->m_Pos = Pos;
-		return true;
-	}
+		m_aaSpawnPoints[2].add(Pos);
 
 	return false;
 }
@@ -362,12 +314,6 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
 void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 {
-	// default health
-	pChr->IncreaseHealth(10);
-
-	// give default weapons
-	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
 }
 
 void IGameController::DoWarmup(int Seconds)
@@ -448,7 +394,7 @@ void IGameController::Tick()
 	if(m_GameOverTick != -1)
 	{
 		// game over.. wait for restart
-		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*3)
 		{
 			CycleMap();
 			StartRound();
@@ -533,7 +479,7 @@ void IGameController::Tick()
 					break;
 			}
 		#endif
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
+			if(GameServer()->m_apPlayers[i] && !GameServer()->m_apPlayers[i]->GetZomb() && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
 			{
 				if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick+g_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60)
 				{
@@ -710,62 +656,33 @@ bool IGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 
 void IGameController::DoWincheck()
 {
-	if(m_GameOverTick == -1 && !m_Warmup && !GameServer()->m_World.m_ResetRequested)
-	{
-		if(IsTeamplay())
-		{
-			// check score win condition
-			if((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) ||
-				(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
-			{
-				if(m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
-					EndRound();
-				else
-					m_SuddenDeath = 1;
-			}
-		}
-		else
-		{
-			// gather some stats
-			int Topscore = 0;
-			int TopscoreCount = 0;
-			for(int i = 0; i < MAX_CLIENTS; i++)
-			{
-				if(GameServer()->m_apPlayers[i])
-				{
-					if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
-					{
-						Topscore = GameServer()->m_apPlayers[i]->m_Score;
-						TopscoreCount = 1;
-					}
-					else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
-						TopscoreCount++;
-				}
-			}
-
-			// check score win condition
-			if((g_Config.m_SvScorelimit > 0 && Topscore >= g_Config.m_SvScorelimit) ||
-				(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
-			{
-				if(TopscoreCount == 1)
-					EndRound();
-				else
-					m_SuddenDeath = 1;
-			}
-		}
-	}
 }
 
 int IGameController::ClampTeam(int Team)
 {
 	if(Team < 0)
 		return TEAM_SPECTATORS;
-	if(IsTeamplay())
-		return Team&1;
-	return 0;
 }
 
 double IGameController::GetTime()
 {
 	return static_cast<double>(Server()->Tick() - m_RoundStartTick)/Server()->TickSpeed();
+}
+
+void IGameController::CheckZombie()
+{
+	if(m_Warmup)
+		return;
+	for(int i = 0; i < g_Config.m_LastDayMaxZombNum; i++)//...
+	{
+		if(!GameServer()->m_apPlayers[i])//Check if the CID is free
+		{
+			int Attack = random_int(1, 15);
+
+			if(GameServer()->NumZombiesAlive() >= g_Config.m_LastDayMaxZombNum)
+				break;
+			
+			GameServer()->OnZombie(MAX_CLIENTS-i-1, Attack);//Create a Zombie Finally
+		}
+	}
 }

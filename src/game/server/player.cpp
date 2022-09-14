@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 #include <engine/shared/config.h>
+#include <bitset>
 #include "player.h"
 
 
@@ -9,7 +10,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
-CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
+CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team, bool Zomb, int Attack)
 {
 	m_pGameServer = pGameServer;
 	m_RespawnTick = Server()->Tick();
@@ -17,7 +18,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_ScoreStartTick = Server()->Tick();
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
-	m_Team = GameServer()->m_pController->ClampTeam(Team);
+	m_Team = 0;
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
@@ -34,6 +35,9 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	    idMap[i] = -1;
 	}
 	idMap[0] = ClientID;
+	
+	m_Zomb = Zomb;
+	m_Attack = Attack;
 }
 
 CPlayer::~CPlayer()
@@ -98,7 +102,7 @@ void CPlayer::Tick()
 		if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
 			m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
 
-		if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
+		if(!m_pCharacter && m_DieTick+Server()->TickSpeed() <= Server()->Tick())
 			m_Spawning = true;
 
 		if(m_pCharacter)
@@ -150,29 +154,109 @@ void CPlayer::Snap(int SnappingClient)
 #ifdef CONF_DEBUG
 	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS-g_Config.m_DbgDummies)
 #endif
-	if(!Server()->ClientIngame(m_ClientID))
+	if(!Server()->ClientIngame(m_ClientID) && !m_Zomb)
 		return;
 
 	int id = m_ClientID;
 	if (!Server()->Translate(id, SnappingClient)) return;
 
+	CPlayer *pPlayer = GameServer()->m_apPlayers[SnappingClient];
+	if(pPlayer->GetZomb())
+	{
+		return;
+	}
+
 	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, id, sizeof(CNetObj_ClientInfo)));
 	if(!pClientInfo)
 		return;
 
-	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
-	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
-	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
-	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
-	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
+	if(m_Zomb)
+	{
+		pClientInfo->m_UseCustomColor = 1;
+		StrToInts(&pClientInfo->m_Clan0, 3, "Zombie");
+		pClientInfo->m_Country = -1;
+		pClientInfo->m_ColorBody = 0;
+		pClientInfo->m_ColorFeet = 0;
+		m_Team = 2; // Don't snap Zombies at Scorebroad.
+		if(m_Zomb == 1)//Zaby
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zaby");
+			StrToInts(&pClientInfo->m_Skin0, 6, "zaby");
+		}
+		else if(m_Zomb == 2)//Zoomer
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zoomer");
+			StrToInts(&pClientInfo->m_Skin0, 6, "redstripe");
+		}
+		else if(m_Zomb == 3)//Zooker
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zooker");
+			StrToInts(&pClientInfo->m_Skin0, 6, "bluekitty");
+		}
+		else if(m_Zomb == 4)//Zamer
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zamer");
+			StrToInts(&pClientInfo->m_Skin0, 6, "twinbop");
+		}
+		else if(m_Zomb == 5)//Zunner
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zunner");
+			StrToInts(&pClientInfo->m_Skin0, 6, "cammostripes");
+		}
+		else if(m_Zomb == 6)//Zaster
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zaster");
+			StrToInts(&pClientInfo->m_Skin0, 6, "coala");
+		}
+		else if(m_Zomb == 7)//Zotter
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zotter");
+			StrToInts(&pClientInfo->m_Skin0, 6, "cammo");
+		}
+		else if(m_Zomb == 8)//Zenade
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zenade");
+			StrToInts(&pClientInfo->m_Skin0, 6, "twintri");
+		}
+		else if(m_Zomb == 9)//Fombie
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Flombie");
+			StrToInts(&pClientInfo->m_Skin0, 6, "toptri");
+		}
+		else if(m_Zomb == 10)//Zinja
+		{
+			StrToInts(&pClientInfo->m_Name0, 4, "Zinja");
+			StrToInts(&pClientInfo->m_Skin0, 6, "x_ninja");
+		}
+
+		if(m_pCharacter && m_pCharacter->IsFrozen())
+		{
+			pClientInfo->m_ColorBody = 16777215;
+			pClientInfo->m_ColorFeet = 16777215;
+		}
+	}
+	else
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+		StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
+		pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
+		if(m_pCharacter && m_pCharacter->IsFrozen())
+		{
+			pClientInfo->m_UseCustomColor = 1;
+			pClientInfo->m_ColorBody = 16777215;
+			pClientInfo->m_ColorFeet = 16777215;
+		}
+		else pClientInfo->m_UseCustomColor = 0;
+		StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	}
 
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
 		return;
-
-	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
+	if(m_Zomb)
+		pPlayerInfo->m_Latency = 10;
+	else
+		pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = id;
 	pPlayerInfo->m_Score = m_Score;
@@ -372,4 +456,22 @@ const char* CPlayer::GetLanguage()
 void CPlayer::SetLanguage(const char* pLanguage)
 {
 	str_copy(m_aLanguage, pLanguage, sizeof(m_aLanguage));
+}
+
+bool CPlayer::GetZombValue(int Number)
+{
+	if(Number < 0 || Number > 4)
+	{
+		return 0;
+	}
+
+	int Attack = m_Attack;
+	array<bool> aValue;
+	for(int i = 0;Attack > 0;i ++)
+	{
+		aValue.add(Attack%2);
+		Attack /= 2;
+	}
+
+	return aValue[4-Number];
 }

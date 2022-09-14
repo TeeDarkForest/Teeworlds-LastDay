@@ -39,6 +39,7 @@ bool random_prob(float f);
 int random_int(int Min, int Max);
 inline float frandom() { return rand()/(float)(RAND_MAX); }
 
+int to_binary(int d);
 // float to fixed
 inline int f2fx(float v) { return (int)(v*(float)(1<<10)); }
 inline float fx2f(int v) { return v*(1.0f/(1<<10)); }

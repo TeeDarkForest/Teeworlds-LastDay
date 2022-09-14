@@ -13,7 +13,7 @@ class CPlayer
 	MACRO_ALLOC_POOL_ID()
 
 public:
-	CPlayer(CGameContext *pGameServer, int ClientID, int Team);
+	CPlayer(CGameContext *pGameServer, int ClientID, int Team, bool Zomb=0, int Attack=0);
 	~CPlayer();
 
 	void Init(int CID);
@@ -102,6 +102,36 @@ public:
 	} m_Latency;
 
 	int m_Authed;
+	// Last Day
+	bool m_Zomb;
+	int m_Attack;
+
+	bool GetZomb() { 
+		return m_Zomb; 
+	};
+	/*
+	-	please read this in player.h 
+	-	The zomb value(binary m_Attack):
+	-	e.g:
+	////////////////////
+	-	1 0 1 0
+	-	^
+	-	can use grenade
+	////////////////////
+	-	1 0 1 0
+	-	  ^
+	-	can use shotgun
+	////////////////////
+	-	1 0 1 0
+	-	  	^
+	-	can use gun
+	////////////////////
+	-	1 0 1 0
+	-	      ^
+	-	can hook
+	////////////////////
+	*/
+	bool GetZombValue(int Number);
 
 private:
 	CCharacter *m_pCharacter;
@@ -117,7 +147,7 @@ private:
 
 	char m_aLanguage[16];
 
-	private:
+private:
 	CTuningParams m_PrevTuningParams;
 	CTuningParams m_NextTuningParams;
 
