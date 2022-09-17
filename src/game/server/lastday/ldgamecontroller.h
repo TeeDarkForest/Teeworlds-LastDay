@@ -8,5 +8,6 @@ public:
 	CLastDayGameController(class CGameContext *pGameServer);
 	virtual void Tick();
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
+	void InitWeapon();
 };
 #endif

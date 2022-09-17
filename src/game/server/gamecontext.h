@@ -211,16 +211,12 @@ public:
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
-private:
-	IWeapon *m_apLastDayWeapons[NUM_LD_WEAPONS];
 public:
 /* Last Day Start */
 	void OnZombie(int ClientID, int Attack);
 	void OnZombieKill(int ClientID);
 	int NumZombiesAlive();
 
-	void InitWeapon();
-	IWeapon *GetLastDayWeapon(int WeaponID);
 /*  Last Day End  */
 };
 

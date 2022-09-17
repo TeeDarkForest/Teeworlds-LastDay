@@ -4,7 +4,7 @@
 #include "grenade.h"
 
 CWeaponGrenade::CWeaponGrenade(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_GRENADE, WEAPON_GRENADE)
+    : CWeapon(pGameServer, TWS_WEAPON_GRENADE, WEAPON_GRENADE, 500)
 {
 }
 

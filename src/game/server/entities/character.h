@@ -148,6 +148,7 @@ public:
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
 	int m_FrozenTime;
+	bool m_InFreeze;
 public:
 	/* Last Day Start */
 	bool m_RealSnapPlayer[MAX_CLIENTS];
@@ -169,6 +170,8 @@ private:
 	{
 		int m_JumpedTick;
 		int m_FireTick;
+		int m_RandomJumpTick;
+		int m_RandomMoveTick;
 	} m_AI;
 
 	void HandleZones();

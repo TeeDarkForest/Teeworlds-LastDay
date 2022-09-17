@@ -4,7 +4,7 @@
 #include "rifle.h"
 
 CWeaponRifle::CWeaponRifle(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_RIFLE, WEAPON_RIFLE)
+    : CWeapon(pGameServer, TWS_WEAPON_RIFLE, WEAPON_RIFLE, 800)
 {
 }
 

@@ -4,7 +4,7 @@
 #include "hammer-plus.h"
 
 CWeaponHammerPlus::CWeaponHammerPlus(CGameContext *pGameServer)
-    : CWeapon(pGameServer, LD_WEAPON_HAMMER_PLUS, WEAPON_HAMMER)
+    : CWeapon(pGameServer, LD_WEAPON_HAMMER_PLUS, WEAPON_HAMMER, 125)
 {
 }
 
@@ -41,7 +41,7 @@ void CWeaponHammerPlus::Fire(int Owner, vec2 Dir, vec2 Pos)
             Dir = vec2(0.f, -1.f);
 
         pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
-            pOwnerChr->GetPlayer()->GetCID(), GetShowType());
+            pOwnerChr->GetPlayer()->GetCID(), GetShowType(), GetWeaponID());
         Hits++;
     }
 

@@ -4,7 +4,7 @@
 #include "gun.h"
 
 CWeaponGun::CWeaponGun(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_GUN, WEAPON_GUN)
+    : CWeapon(pGameServer, TWS_WEAPON_GUN, WEAPON_GUN, 125)
 {
 }
 

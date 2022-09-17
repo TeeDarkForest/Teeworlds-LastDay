@@ -11,6 +11,7 @@ enum LastDayWeapon
     TWS_WEAPON_NINJA,
 
     LD_WEAPON_HAMMER_PLUS,
+    LD_WEAPON_FIREGUN,
 
     NUM_LD_WEAPONS,
 };

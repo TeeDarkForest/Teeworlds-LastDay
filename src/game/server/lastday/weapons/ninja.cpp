@@ -4,7 +4,7 @@
 #include "ninja.h"
 
 CWeaponNinja::CWeaponNinja(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_NINJA, WEAPON_NINJA)
+    : CWeapon(pGameServer, TWS_WEAPON_NINJA, WEAPON_NINJA, 800)
 {
 }
 

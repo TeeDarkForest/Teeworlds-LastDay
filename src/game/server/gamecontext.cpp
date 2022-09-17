@@ -13,15 +13,6 @@
 
 #include <teeuniverses/components/localization.h>
 
-#include "lastday/weapons/hammer.h"
-#include "lastday/weapons/gun.h"
-#include "lastday/weapons/shotgun.h"
-#include "lastday/weapons/grenade.h"
-#include "lastday/weapons/rifle.h"
-#include "lastday/weapons/ninja.h"
-
-#include "lastday/weapons/hammer-plus.h"
-
 enum
 {
 	RESET,
@@ -79,12 +70,6 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
-
-	for(int i = 0;i < NUM_LD_WEAPONS;i ++)
-	{
-		delete m_apLastDayWeapons[i];
-		m_apLastDayWeapons[i] = 0;
-	}
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -808,14 +793,14 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			char aCmd[VOTE_CMD_LENGTH] = {0};
 			bool m_ChatTarget = false;
 			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
-			const char *pReason = pMsg->m_Reason[0] ? pMsg->m_Reason : "No reason given";
+			const char *pReason = pMsg->m_pReason[0] ? pMsg->m_pReason : "No reason given";
 
-			if(str_comp_nocase(pMsg->m_Type, "option") == 0)
+			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
 				CVoteOptionServer *pOption = m_pVoteOptionFirst;
 				while(pOption)
 				{
-					if(str_comp_nocase(pMsg->m_Value, pOption->m_aDescription) == 0)
+					if(str_comp_nocase(pMsg->m_pValue, pOption->m_aDescription) == 0)
 					{
 						str_format(aChatmsg, sizeof(aChatmsg), "'%s' called vote to change server option '%s' (%s)", Server()->ClientName(ClientID),
 									pOption->m_aDescription, pReason);
@@ -833,12 +818,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 				if(!pOption)
 				{
-					str_format(aChatmsg, sizeof(aChatmsg), "'%s' isn't an option on this server", pMsg->m_Value);
-					SendChatTarget(ClientID, _("'{str:Option}' isn't an option on this server"), "Option", pMsg->m_Value);
+					str_format(aChatmsg, sizeof(aChatmsg), "'%s' isn't an option on this server", pMsg->m_pValue);
+					SendChatTarget(ClientID, _("'{str:Option}' isn't an option on this server"), "Option", pMsg->m_pValue);
 					return;
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_Type, "kick") == 0)
+			else if(str_comp_nocase(pMsg->m_pType, "kick") == 0)
 			{
 				if(!g_Config.m_SvVoteKick)
 				{
@@ -861,7 +846,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					}
 				}
 
-				int KickID = str_toint(pMsg->m_Value);
+				int KickID = str_toint(pMsg->m_pValue);
 				if(KickID < 0 || KickID >= MAX_CLIENTS || !m_apPlayers[KickID])
 				{
 					SendChatTarget(ClientID, _("Invalid client id to kick"));
@@ -896,7 +881,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					str_format(aCmd, sizeof(aCmd), "ban %s %d Banned by vote", aAddrStr, g_Config.m_SvVoteKickBantime);
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
+			else if(str_comp_nocase(pMsg->m_pType, "spectate") == 0)
 			{
 				if(!g_Config.m_SvVoteSpectate)
 				{
@@ -904,7 +889,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 				}
 
-				int SpectateID = str_toint(pMsg->m_Value);
+				int SpectateID = str_toint(pMsg->m_pValue);
 				if(SpectateID < 0 || SpectateID >= MAX_CLIENTS || !m_apPlayers[SpectateID] || m_apPlayers[SpectateID]->GetTeam() == TEAM_SPECTATORS)
 				{
 					SendChatTarget(ClientID, _("Invalid client id to move"));
@@ -1046,7 +1031,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			CNetMsg_Cl_Emoticon *pMsg = (CNetMsg_Cl_Emoticon *)pRawMsg;
 
-			if(g_Config.m_SvSpamprotection && pPlayer->m_LastEmote && pPlayer->m_LastEmote+Server()->TickSpeed()*3 > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_LastEmote && pPlayer->m_LastEmote+2 > Server()->Tick())
 				return;
 
 			pPlayer->m_LastEmote = Server()->Tick();
@@ -1757,8 +1742,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	// select gametype
 	m_pController = new CLastDayGameController(this);
 
-	// init weapon
-	InitWeapon();
 
 	// setup core world
 	//for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1906,6 +1889,7 @@ const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
 
+/* Last Day Start */
 void CGameContext::OnZombie(int ClientID, int Attack)
 {
 	if(ClientID >= MAX_CLIENTS || m_apPlayers[ClientID])
@@ -1944,27 +1928,4 @@ int CGameContext::NumZombiesAlive()
 	}
 	return NumZombies;
 }
-
-/* Last Day Start */
-void CGameContext::InitWeapon()
-{
-	m_apLastDayWeapons[TWS_WEAPON_HAMMER] = new CWeaponHammer(this);
-	m_apLastDayWeapons[TWS_WEAPON_GUN] = new CWeaponGun(this);
-	m_apLastDayWeapons[TWS_WEAPON_SHOTGUN] = new CWeaponShotgun(this);
-	m_apLastDayWeapons[TWS_WEAPON_GRENADE] = new CWeaponGrenade(this);
-	m_apLastDayWeapons[TWS_WEAPON_RIFLE] = new CWeaponRifle(this);
-	m_apLastDayWeapons[TWS_WEAPON_NINJA] = new CWeaponNinja(this);
-	
-	m_apLastDayWeapons[LD_WEAPON_HAMMER_PLUS] = new CWeaponHammerPlus(this);
-}
-
-IWeapon *CGameContext::GetLastDayWeapon(int WeaponID)
-{
-	if(WeaponID < TWS_WEAPON_HAMMER && WeaponID >= NUM_LD_WEAPONS)
-		return 0;
-	if(!m_apLastDayWeapons[WeaponID])
-		return 0;
-	return m_apLastDayWeapons[WeaponID];
-}
-
 /*  Last Day End  */

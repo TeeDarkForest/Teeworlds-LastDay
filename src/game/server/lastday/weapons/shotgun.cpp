@@ -4,7 +4,7 @@
 #include "shotgun.h"
 
 CWeaponShotgun::CWeaponShotgun(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_SHOTGUN, WEAPON_SHOTGUN)
+    : CWeapon(pGameServer, TWS_WEAPON_SHOTGUN, WEAPON_SHOTGUN, 500)
 {
 }
 

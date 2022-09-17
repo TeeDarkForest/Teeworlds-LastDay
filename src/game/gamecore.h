@@ -232,8 +232,6 @@ public:
 	void Read(const CNetObj_CharacterCore *pObjCore);
 	void Write(CNetObj_CharacterCore *pObjCore);
 	void Quantize();
-
-	bool m_Zooker;
 };
 
 #endif

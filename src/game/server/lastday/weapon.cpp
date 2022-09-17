@@ -1,10 +1,11 @@
 #include <game/server/gamecontext.h>
 #include "weapon.h"
 
-IWeapon::IWeapon(CGameContext *pGameServer, int WeaponID, int ShowType) :
+IWeapon::IWeapon(CGameContext *pGameServer, int WeaponID, int ShowType, int FireDelay) :
     m_pGameServer(pGameServer),
     m_WeaponID(WeaponID),
-    m_ShowType(ShowType)
+    m_ShowType(ShowType),
+    m_FireDelay(FireDelay)
 {
 }
 
@@ -28,8 +29,13 @@ int IWeapon::GetShowType() const
     return m_ShowType;
 }
 
-CWeapon::CWeapon(CGameContext *pGameServer, int WeaponID, int ShowType) :
-    IWeapon(pGameServer, WeaponID, ShowType)
+int IWeapon::GetFireDelay() const
+{
+    return m_FireDelay;
+}
+
+CWeapon::CWeapon(CGameContext *pGameServer, int WeaponID, int ShowType, int FireDelay) :
+    IWeapon(pGameServer, WeaponID, ShowType, FireDelay)
 {
 }
 
@@ -37,3 +43,10 @@ void CWeapon::OnFire(int Owner, vec2 Dir, vec2 Pos)
 {
     Fire(Owner, Dir, Pos);
 }
+
+void WeaponSystem::InitWeapon(int Number, IWeapon *pWeapon)
+{
+	m_apLastDayWeapon[Number] = pWeapon;
+}
+
+WeaponSystem g_Weapons;

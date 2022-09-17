@@ -6,6 +6,7 @@
 #include <base/tl/ic_array.h>
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
+#include <game/server/lastday/weapon.h>
 #include <game/mapitems.h>
 
 #include "character.h"
@@ -77,6 +78,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ActiveWeapon = TWS_WEAPON_HAMMER;
 	m_LastWeapon = TWS_WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
+	m_InFreeze = false;
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
@@ -104,6 +106,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	m_AI.m_JumpedTick = 0;
 	m_AI.m_FireTick = 0;
+	m_AI.m_RandomMoveTick = 0;
+	m_AI.m_RandomJumpTick = 0;
 	return true;
 }
 
@@ -271,7 +275,8 @@ void CCharacter::FireWeapon()
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
 	bool FullAuto = false;
-	if(m_ActiveWeapon == TWS_WEAPON_GRENADE || m_ActiveWeapon == TWS_WEAPON_SHOTGUN || m_ActiveWeapon == TWS_WEAPON_RIFLE)
+	if(m_ActiveWeapon == TWS_WEAPON_GRENADE || m_ActiveWeapon == TWS_WEAPON_SHOTGUN 
+		|| m_ActiveWeapon == TWS_WEAPON_RIFLE || m_ActiveWeapon == LD_WEAPON_FIREGUN)
 		FullAuto = true;
 
 
@@ -298,7 +303,7 @@ void CCharacter::FireWeapon()
 		}
 		return;
 	}
-	IWeapon *pWeapon = GameServer()->GetLastDayWeapon(m_ActiveWeapon);
+	IWeapon *pWeapon = g_Weapons.m_apLastDayWeapon[m_ActiveWeapon];
 	if(!pWeapon)
 		return;
 
@@ -319,7 +324,7 @@ void CCharacter::FireWeapon()
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 1000;
+		m_ReloadTimer = pWeapon->GetFireDelay() * Server()->TickSpeed() / 1000;
 }
 
 void CCharacter::HandleWeapons()
@@ -404,7 +409,6 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 void CCharacter::ResetInput()
 {
 	m_Input.m_Direction = 0;
-	m_Input.m_Hook = 0;
 	// simulate releasing the fire button
 	if((m_Input.m_Fire&1) != 0)
 		m_Input.m_Fire++;
@@ -434,15 +438,27 @@ void CCharacter::Tick()
 			Unfreeze();
 		else
 		{
-			if (m_FrozenTime % Server()->TickSpeed() == Server()->TickSpeed() - 1)
-				GameServer()->CreateDamageInd(m_Pos, 0, (m_FrozenTime + 1) / Server()->TickSpeed());		
+			if (m_FrozenTime % Server()->TickSpeed() == 0)
+				GameServer()->CreateDamageInd(m_Pos, random_int(25, m_FrozenTime), random_int(2, 7));		
 		}
 	}
 
+	// AI Start
 	if(m_AI.m_FireTick)
 	{
 		m_AI.m_FireTick--;
 	}
+
+	if(m_AI.m_RandomJumpTick)
+	{
+		m_AI.m_RandomJumpTick--;
+	}
+
+	if(m_AI.m_RandomMoveTick)
+	{
+		m_AI.m_RandomMoveTick--;
+	}
+	// AI End
 
 	if (m_EmoteStop < Server()->Tick())
 	{
@@ -817,7 +833,7 @@ void CCharacter::Snap(int SnappingClient)
 			pCharacter->m_HookedPlayer = -1;
 	}
 	int EmoteType = m_EmoteType;
-	if(IsFrozen())
+	if(IsFrozen() && !m_InFreeze)
 	{
 		EmoteType = EMOTE_PAIN;
 
@@ -837,7 +853,7 @@ void CCharacter::Snap(int SnappingClient)
 	pCharacter->m_Health = 0;
 	pCharacter->m_Armor = 0;
 
-	pCharacter->m_Weapon = GameServer()->GetLastDayWeapon(m_ActiveWeapon)->GetShowType();
+	pCharacter->m_Weapon = g_Weapons.m_apLastDayWeapon[m_ActiveWeapon]->GetShowType();
 	pCharacter->m_AttackTick = m_AttackTick;
 
 	pCharacter->m_Direction = m_Input.m_Direction;
@@ -848,7 +864,7 @@ void CCharacter::Snap(int SnappingClient)
 		pCharacter->m_Health = m_Health;
 		pCharacter->m_Armor = m_Armor;
 		if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
-			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
+			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo / ceil(m_aWeapons[m_ActiveWeapon].m_Ammo / 10.0);
 	}
 
 	if(pCharacter->m_Emote == EMOTE_NORMAL)
@@ -875,8 +891,10 @@ void CCharacter::Teleport(vec2 Pos)
 
 void CCharacter::Freeze(float Time, int Reason)
 {
-	if(!IsFrozen())
-		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
+	if(IsFrozen() && m_FrozenTime > Server()->TickSpeed())
+		return;
+		
+	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 	m_Core.m_FreezeState = FREEZESTATE_NORMAL;
 	m_FrozenTime = Server()->TickSpeed()*Time;
 
@@ -924,6 +942,8 @@ void CCharacter::HandleZones()
 	Indices.Add(Data2.Index);
 	Indices.Add(Data3.Index);
 
+	m_InFreeze = false;
+
 	if(Indices.Contains(ZONE_LASTDAY_DEATH) || GameLayerClipped(m_Pos))
 	{
 		Die(GetCID(), WEAPON_WORLD);
@@ -932,6 +952,7 @@ void CCharacter::HandleZones()
 	if(Indices.Contains(ZONE_LASTDAY_FREEZE))
 	{
 		Freeze(g_Config.m_SvFreezeTime, FREEZEREASON_FREEZE_ZONE);
+		m_InFreeze = true;
 		return;
 	}
 	if(Indices.Contains(ZONE_LASTDAY_UNFREEZE))
@@ -1021,7 +1042,7 @@ void CCharacter::UpdateTuningParam()
 		pTuningParams->m_GroundJumpImpulse = 0.0f;
 		pTuningParams->m_AirJumpImpulse = 0.0f;
 		pTuningParams->m_AirControlAccel = 0.0f;
-		pTuningParams->m_HookLength = 0.0f;
+		pTuningParams->m_HookLength = -1.0f;
 	}
 	
 }
@@ -1052,8 +1073,78 @@ void CCharacter::DoZombieAction()
 		}
 	}
 
+
+	m_Input.m_Jump = 0;
+
+	int i = 0;
+	while(!m_Input.m_Jump)
+	{
+		if(TileSafe(m_Pos.x, m_Pos.y + i * 32) < 1)
+		{
+			m_Input.m_Jump = 1;
+		}
+		if(TileSafe(m_Pos.x, m_Pos.y == 2))
+		{
+			break;
+		}
+		i++;
+	}
+
 	if(!pVim)
 	{
+		bool CheckTileL, CheckTileR, CheckTileLD, CheckTileRD;
+		CheckTileL = TileSafe(m_Pos.x-32, m_Pos.y) == 2 || TileSafe(m_Pos.x-32, m_Pos.y) == 0;
+		CheckTileR = TileSafe(m_Pos.x+32, m_Pos.y) == 2 || TileSafe(m_Pos.x+32, m_Pos.y) == 0;
+		CheckTileLD = TileSafe(m_Pos.x-32, m_Pos.y+64) == 1 || TileSafe(m_Pos.x-32, m_Pos.y+64) == 0;
+		CheckTileRD = TileSafe(m_Pos.x+32, m_Pos.y+64) == 1 || TileSafe(m_Pos.x+32, m_Pos.y+64) == 0;
+		if(CheckTileL && CheckTileR)
+		{
+			Die(m_pPlayer->GetCID(), WEAPON_SELF);
+			return;
+		}
+		else if(CheckTileL || (!m_AI.m_RandomMoveTick && random_int(1, 100) < 50))
+		{
+			if(TileSafe(m_Pos.x - 32, m_Pos.y - 160) == 1 && CheckTileL)
+			{
+				m_Input.m_Jump = 1;
+				m_Input.m_Direction = -1;
+			}else 
+			{
+				m_Input.m_Direction = 1;
+				m_Input.m_TargetX = 1;
+				m_Input.m_TargetY = 0;
+				m_AI.m_RandomMoveTick = random_int(50, 200);
+			}
+		}else if(CheckTileR || (!m_AI.m_RandomMoveTick && random_int(1, 100) < 50))
+		{
+			if(TileSafe(m_Pos.x + 32, m_Pos.y - 160) == 1 && CheckTileR)
+			{
+				m_Input.m_Jump = 1;
+				m_Input.m_Direction = 1;
+			}else 
+			{
+				m_Input.m_Jump = 0;
+				m_Input.m_Direction = -1;
+				m_Input.m_TargetX = -1;
+				m_Input.m_TargetY = 0;
+				m_AI.m_RandomMoveTick = random_int(50, 200);
+			}
+		}
+		if((CheckTileLD || CheckTileRD) && IsGrounded())
+		{
+			m_Input.m_Jump = 1;
+		}
+
+		if(!m_AI.m_RandomJumpTick)
+		{
+			m_Input.m_Jump = 1;
+			m_AI.m_RandomJumpTick = random_int(50, 200);
+		}else m_Input.m_Jump = 0;
+		m_LatestInput.m_TargetX = m_Input.m_TargetX;
+		m_LatestInput.m_TargetY = m_Input.m_TargetY;
+
+		m_Input.m_Fire = 0;
+		m_LatestInput.m_Fire = 0;
 		return;
 	}
 
@@ -1065,8 +1156,6 @@ void CCharacter::DoZombieAction()
 	}else if(pVim->m_Pos.x > m_Pos.x)
 		m_Input.m_Direction = 1;
 
-	m_Input.m_Jump = 0;
-	
 	if(pVim->m_Pos.y < m_Pos.y)
 	{
 		if(IsGrounded())
@@ -1096,20 +1185,6 @@ void CCharacter::DoZombieAction()
 			m_Input.m_Hook = 0;
 			m_LatestInput.m_Hook = 0;
 		}
-	}
-	int i = 0;
-
-	while(!m_Input.m_Jump)
-	{
-		if(TileSafe(m_Pos.x, m_Pos.y + i * 32) == 0)
-		{
-			m_Input.m_Jump = 1;
-		}
-		if(TileSafe(m_Pos.x, m_Pos.y == 2))
-		{
-			break;
-		}
-		i++;
 	}
 
 	if(!m_AI.m_FireTick)

@@ -30,37 +30,37 @@
 
 enum
 {
-	NETMSG_NULL=0,
+	NETMSG_EX = 0,
 
 	// the first thing sent by the client
 	// contains the version info for the client
-	NETMSG_INFO=1,
+	NETMSG_INFO = 1,
 
 	// sent by server
-	NETMSG_MAP_CHANGE,		// sent when client should switch map
-	NETMSG_MAP_DATA,		// map transfer, contains a chunk of the map file
-	NETMSG_CON_READY,		// connection is ready, client should send start info
-	NETMSG_SNAP,			// normal snapshot, multiple parts
-	NETMSG_SNAPEMPTY,		// empty snapshot
-	NETMSG_SNAPSINGLE,		// ?
-	NETMSG_SNAPSMALL,		//
-	NETMSG_INPUTTIMING,		// reports how off the input was
-	NETMSG_RCON_AUTH_STATUS,// result of the authentication
-	NETMSG_RCON_LINE,		// line that should be printed to the remote console
+	NETMSG_MAP_CHANGE, // sent when client should switch map
+	NETMSG_MAP_DATA, // map transfer, contains a chunk of the map file
+	NETMSG_CON_READY, // connection is ready, client should send start info
+	NETMSG_SNAP, // normal snapshot, multiple parts
+	NETMSG_SNAPEMPTY, // empty snapshot
+	NETMSG_SNAPSINGLE, // ?
+	NETMSG_SNAPSMALL, //
+	NETMSG_INPUTTIMING, // reports how off the input was
+	NETMSG_RCON_AUTH_STATUS, // result of the authentication
+	NETMSG_RCON_LINE, // line that should be printed to the remote console
 
-	NETMSG_AUTH_CHALLANGE,	//
-	NETMSG_AUTH_RESULT,		//
+	NETMSG_AUTH_CHALLANGE, //
+	NETMSG_AUTH_RESULT, //
 
 	// sent by client
-	NETMSG_READY,			//
+	NETMSG_READY, //
 	NETMSG_ENTERGAME,
-	NETMSG_INPUT,			// contains the inputdata from the client
-	NETMSG_RCON_CMD,		//
-	NETMSG_RCON_AUTH,		//
-	NETMSG_REQUEST_MAP_DATA,//
+	NETMSG_INPUT, // contains the inputdata from the client
+	NETMSG_RCON_CMD, //
+	NETMSG_RCON_AUTH, //
+	NETMSG_REQUEST_MAP_DATA, //
 
-	NETMSG_AUTH_START,		//
-	NETMSG_AUTH_RESPONSE,	//
+	NETMSG_AUTH_START, //
+	NETMSG_AUTH_RESPONSE, //
 
 	// sent by both
 	NETMSG_PING,
@@ -70,6 +70,8 @@ enum
 	// sent by server (todo: move it up)
 	NETMSG_RCON_CMD_ADD,
 	NETMSG_RCON_CMD_REM,
+
+	NUM_NETMSGS,
 };
 
 // this should be revised

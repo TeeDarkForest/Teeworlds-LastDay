@@ -3,7 +3,7 @@
 #include "hammer.h"
 
 CWeaponHammer::CWeaponHammer(CGameContext *pGameServer)
-    : CWeapon(pGameServer, TWS_WEAPON_HAMMER, WEAPON_HAMMER)
+    : CWeapon(pGameServer, TWS_WEAPON_HAMMER, WEAPON_HAMMER, 125)
 {
 }
 

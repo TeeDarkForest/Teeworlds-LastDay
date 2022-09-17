@@ -177,63 +177,10 @@ void CPlayer::Snap(int SnappingClient)
 		pClientInfo->m_Country = -1;
 		pClientInfo->m_ColorBody = 0;
 		pClientInfo->m_ColorFeet = 0;
-		m_Team = 2; // Don't snap Zombies at Scorebroad.
-		if(m_Zomb == 1)//Zaby
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zaby");
-			StrToInts(&pClientInfo->m_Skin0, 6, "zaby");
-		}
-		else if(m_Zomb == 2)//Zoomer
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zoomer");
-			StrToInts(&pClientInfo->m_Skin0, 6, "redstripe");
-		}
-		else if(m_Zomb == 3)//Zooker
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zooker");
-			StrToInts(&pClientInfo->m_Skin0, 6, "bluekitty");
-		}
-		else if(m_Zomb == 4)//Zamer
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zamer");
-			StrToInts(&pClientInfo->m_Skin0, 6, "twinbop");
-		}
-		else if(m_Zomb == 5)//Zunner
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zunner");
-			StrToInts(&pClientInfo->m_Skin0, 6, "cammostripes");
-		}
-		else if(m_Zomb == 6)//Zaster
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zaster");
-			StrToInts(&pClientInfo->m_Skin0, 6, "coala");
-		}
-		else if(m_Zomb == 7)//Zotter
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zotter");
-			StrToInts(&pClientInfo->m_Skin0, 6, "cammo");
-		}
-		else if(m_Zomb == 8)//Zenade
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zenade");
-			StrToInts(&pClientInfo->m_Skin0, 6, "twintri");
-		}
-		else if(m_Zomb == 9)//Fombie
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Flombie");
-			StrToInts(&pClientInfo->m_Skin0, 6, "toptri");
-		}
-		else if(m_Zomb == 10)//Zinja
-		{
-			StrToInts(&pClientInfo->m_Name0, 4, "Zinja");
-			StrToInts(&pClientInfo->m_Skin0, 6, "x_ninja");
-		}
-
-		if(m_pCharacter && m_pCharacter->IsFrozen())
-		{
-			pClientInfo->m_ColorBody = 16777215;
-			pClientInfo->m_ColorFeet = 16777215;
-		}
+		m_Team = 5; // Don't snap Zombies at Scorebroad.
+		StrToInts(&pClientInfo->m_Name0, 4, "Zaby");
+		StrToInts(&pClientInfo->m_Skin0, 6, "zaby");
+		
 	}
 	else
 	{
@@ -389,8 +336,6 @@ void CPlayer::Respawn()
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
 {
-	// clamp the team
-	Team = GameServer()->m_pController->ClampTeam(Team);
 	if(m_Team == Team)
 		return;
 
