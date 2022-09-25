@@ -308,7 +308,7 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText)
 		if(!m_apPlayers[i] || (m_apPlayers[i]->GetTeam() != Team && Team != CHAT_ALL)) continue;
 		int found = 0;
 		if (ChatterClientID >= 0)
-			for (int j = 0;j < 16;j++)
+			for (int j = 0;j < DDNET_MAX_CLIENTS;j++)
 				if (m_apPlayers[i]->idMap[j] == ChatterClientID)
 				{
 					Msg.m_pMessage = pText;
