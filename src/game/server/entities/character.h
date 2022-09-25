@@ -18,11 +18,6 @@ enum
 	WEAPON_WORLD = -1, // death tiles etc
 };
 
-enum
-{
-	FREEZEREASON_FREEZE_ZONE=0,
-};
-
 class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
@@ -152,6 +147,7 @@ public:
 public:
 	/* Last Day Start */
 	bool m_RealSnapPlayer[MAX_CLIENTS];
+	int m_NumRealSnap;
 	/*  Last Day End  */
 private:
 	//zomb2
@@ -170,6 +166,7 @@ private:
 	{
 		int m_JumpedTick;
 		int m_FireTick;
+		int m_HookTick;
 		int m_RandomJumpTick;
 		int m_RandomMoveTick;
 	} m_AI;
@@ -179,8 +176,10 @@ private:
 	void HandleTeleports();
 	void TeleToId(int TeleNumber, int TeleType);
 	void UpdateTuningParam();
-	
+public:
 	int GetCID();
+	int m_Temperature;
+	int m_ColdTick;
 	/*  Last Day End  */
 
 };

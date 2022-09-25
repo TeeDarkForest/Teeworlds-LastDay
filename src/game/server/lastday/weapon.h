@@ -36,7 +36,7 @@ class WeaponSystem
 {
 public:
 	void InitWeapon(int Number, IWeapon *pWeapon);
-	IWeapon *m_apLastDayWeapon[NUM_LD_WEAPONS];
+	IWeapon *m_aWeapons[NUM_LD_WEAPONS];
 };
 
 extern WeaponSystem g_Weapons;

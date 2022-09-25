@@ -5,6 +5,7 @@
 
 #include "ringbuffer.h"
 #include "huffman.h"
+#include "mastermaxclients.h"
 
 #include <base/math.h>
 #include <engine/message.h>
@@ -54,7 +55,7 @@ enum
 	NET_MAX_PAYLOAD = NET_MAX_PACKETSIZE-6,
 	NET_MAX_CHUNKHEADERSIZE = 5,
 	NET_PACKETHEADERSIZE = 3,
-	NET_MAX_CLIENTS = 64,
+	NET_MAX_CLIENTS = MASTER_MAX_CLIENTS,
 	NET_MAX_CONSOLE_CLIENTS = 4,
 	NET_MAX_SEQUENCE = 1<<10,
 	NET_SEQUENCE_MASK = NET_MAX_SEQUENCE-1,

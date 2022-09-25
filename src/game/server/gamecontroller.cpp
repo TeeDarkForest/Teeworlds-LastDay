@@ -35,94 +35,12 @@ IGameController::~IGameController()
 {
 }
 
-float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos)
+bool IGameController::GetSpawn(vec2 *pPos, int Zomb)
 {
-	float Score = 0.0f;
-	CCharacter *pC = static_cast<CCharacter *>(GameServer()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER));
-	for(; pC; pC = (CCharacter *)pC->TypeNext())
-	{
-		// team mates are not as dangerous as enemies
-		float Scoremod = 1.0f;
-		if(pEval->m_FriendlyTeam != -1 && pC->GetPlayer()->GetTeam() == pEval->m_FriendlyTeam)
-			Scoremod = 0.5f;
-
-		float d = distance(Pos, pC->m_Pos);
-		Score += Scoremod * (d == 0 ? 1000000000.0f : 1.0f/d);
-	}
-
-	return Score;
 }
-
-void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type)
-{
-	// get spawn point
-	for(int i = 0; i < m_aaSpawnPoints[Type].size(); i++)
-	{
-		// check if the position is occupado
-		CCharacter *aEnts[MAX_CLIENTS];
-		int Num = GameServer()->m_World.FindEntities(m_aaSpawnPoints[Type][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };	// start, left, up, right, down
-		int Result = -1;
-		for(int Index = 0; Index < 5 && Result == -1; ++Index)
-		{
-			Result = Index;
-			for(int c = 0; c < Num; ++c)
-				if(GameServer()->Collision()->CheckPoint(m_aaSpawnPoints[Type][i]+Positions[Index]) ||
-					distance(aEnts[c]->m_Pos, m_aaSpawnPoints[Type][i]+Positions[Index]) <= aEnts[c]->m_ProximityRadius)
-				{
-					Result = -1;
-					break;
-				}
-		}
-		if(Result == -1)
-			continue;	// try next spawn point
-
-		vec2 P = m_aaSpawnPoints[Type][i]+Positions[Result];
-		if(GameServer()->Collision()->CheckPoint(P))
-		{
-			continue; // you cant spawn in the wall, right?
-		}
-		float S = EvaluateSpawnPos(pEval, P);
-		if(!pEval->m_Got || pEval->m_Score > S)
-		{
-			pEval->m_Got = true;
-			pEval->m_Score = S;
-			pEval->m_Pos = P;
-		}
-	}
-}
-
-bool IGameController::CanSpawn(int Team, vec2 *pOutPos)
-{
-	CSpawnEval Eval;
-
-	// spectators can't spawn
-	if(Team == TEAM_SPECTATORS)
-		return false;
-	
-	EvaluateSpawnType(&Eval, 0);
-	EvaluateSpawnType(&Eval, 1);
-	EvaluateSpawnType(&Eval, 2);
-
-	*pOutPos = Eval.m_Pos;
-	return Eval.m_Got;
-}
-
 
 bool IGameController::OnEntity(const char* pName, vec2 Pivot, vec2 P0, vec2 P1, vec2 P2, vec2 P3, int PosEnv)
 {
-	vec2 Pos = (P0 + P1 + P2 + P3)/4.0f;
-	int Type = -1;
-	int SubType = 0;
-
-	if(str_comp(pName, "spawn") == 0)
-		m_aaSpawnPoints[0].add(Pos);
-	else if(str_comp(pName, "redSpawn") == 0)
-		m_aaSpawnPoints[1].add(Pos);
-	else if(str_comp(pName, "buleSpawn") == 0)
-		m_aaSpawnPoints[2].add(Pos);
-
-	return false;
 }
 
 void IGameController::EndRound()
@@ -667,22 +585,4 @@ int IGameController::ClampTeam(int Team)
 double IGameController::GetTime()
 {
 	return static_cast<double>(Server()->Tick() - m_RoundStartTick)/Server()->TickSpeed();
-}
-
-void IGameController::CheckZombie()
-{
-	if(m_Warmup)
-		return;
-	for(int i = 0; i < g_Config.m_LastDayMaxZombNum; i++)//...
-	{
-		if(!GameServer()->m_apPlayers[i])//Check if the CID is free
-		{
-			int Attack = random_int(1, 15);
-
-			if(GameServer()->NumZombiesAlive() >= g_Config.m_LastDayMaxZombNum)
-				break;
-			
-			GameServer()->OnZombie(MAX_CLIENTS-i-1, Attack);//Create a Zombie Finally
-		}
-	}
 }

@@ -46,7 +46,7 @@ void CWeapon::OnFire(int Owner, vec2 Dir, vec2 Pos)
 
 void WeaponSystem::InitWeapon(int Number, IWeapon *pWeapon)
 {
-	m_apLastDayWeapon[Number] = pWeapon;
+	m_aWeapons[Number] = pWeapon;
 }
 
 WeaponSystem g_Weapons;

@@ -13,16 +13,16 @@
             "value": "可用语言: {str:ListOfLanguage}"
         },
         {
-            "key": "'{str:PlayerName}' entered and joined the game",
-            "value": "'{str:PlayerName}' 进入服务器并加入游戏"
+            "key": "'{str:PlayerName}' joined the survival",
+            "value": "'{str:PlayerName}' 加入了生存"
         },
         {
-            "key": "'{str:PlayerName}' has left the game ({str:Reason})",
-            "value": "'{str:PlayerName}' 离开了游戏 ({str:Reason})"
+            "key": "'{str:PlayerName}' maybe has left ({str:Reason})",
+            "value": "'{str:PlayerName}' 或许离开了 ({str:Reason})"
         },
         {
-            "key": "'{str:PlayerName}' has left the game",
-            "value": "'{str:PlayerName}' 离开了游戏"
+            "key": "'{str:PlayerName}' maybe has left",
+            "value": "'{str:PlayerName}' 或许离开了"
         },
         {
             "key": "Spectators aren't allowed to start a vote.",
@@ -89,6 +89,10 @@
             "value": "你不能踢出你自己"
         },
         {
+            "key": "You can't kick zombies",
+            "value": "你不能踢出僵尸"
+        },
+        {
             "key": "You can't kick admins",
             "value": "你不能踢出管理员"
         },
@@ -111,6 +115,10 @@
         {
             "key": "You can't move yourself",
             "value": "你不能移动你自己"
+        },
+        {
+            "key": "You can't move zombies",
+            "value": "你不能移动僵尸"
         },
         {
             "key": "'{str:Player1}' called for vote to move '{str:Player2}' to spectators ({str:R})",
@@ -149,20 +157,20 @@
             "value": "'{str:Old}' 改名叫 '{str:New}'"
         },
         {
-            "key": "'{str:Player}' joined the spectators",
-            "value": "'{str:Player}' 加入了旁观"
+            "key": "'{str:Player}' started to rest",
+            "value": "'{str:Player}' 开始休息"
         },
         {
-            "key": "'{str:Player}' joined the blueteam",
-            "value": "'{str:Player}' 加入了蓝队"
+            "key": "'{str:Player}' has returned",
+            "value": "'{str:Player}' 回归了"
         },
         {
-            "key": "'{str:Player}' joined the redteam",
-            "value": "'{str:Player}' 加入了红队"
+            "key": "Temperature: {int:temperature}°D\nWeapon: {int:Weapon}",
+            "value": "温度: {int:temperature}°D\n武器: {int:Weapon}"
         },
         {
-            "key": "'{str:Player}' joined the game",
-            "value": "'{str:Player}' 加入了游戏"
+            "key": "'{str:PlayerName}' feel too cold",
+            "value": "'{str:PlayerName}' 觉得太冷了"
         }
     ]
 }

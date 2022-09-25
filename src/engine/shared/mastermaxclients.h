@@ -1,0 +1,1 @@
+#define MASTER_MAX_CLIENTS 512

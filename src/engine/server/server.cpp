@@ -275,7 +275,7 @@ void CServer::CClient::Reset()
 	m_LastInputTick = -1;
 	m_SnapRate = CClient::SNAPRATE_INIT;
 	m_Score = 0;
-	str_copy(m_aLanguage, "en", sizeof(m_aLanguage));
+	str_copy(m_aLanguage, g_Config.m_SvDefaultLang, sizeof(m_aLanguage));
 }
 
 const char* CServer::GetClientLanguage(int ClientID)
@@ -491,7 +491,7 @@ const char *CServer::ClientName(int ClientID)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 		return "(invalid)";
 	if(m_aClients[ClientID].m_State == CClient::STATE_ZOMB)
-		return "Zombie";//needed
+		return "";//needed
 	else if(m_aClients[ClientID].m_State == CServer::CClient::STATE_INGAME)
 		return m_aClients[ClientID].m_aName;
 	else
@@ -1244,7 +1244,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool Sen
 	// flags
 	ADD_INT(p, g_Config.m_Password[0] ? SERVER_FLAG_PASSWORD : 0);
 
-	int MaxClients = max(1, m_NetServer.MaxClients()-g_Config.m_LastDayMaxZombNum);
+	int MaxClients = max(1, m_NetServer.MaxClients()-g_Config.m_LDMaxZombNum);
 	if(Type == SERVERINFO_VANILLA || Type == SERVERINFO_INGAME)
 	{
 		if(ClientCount >= VANILLA_MAX_CLIENTS)

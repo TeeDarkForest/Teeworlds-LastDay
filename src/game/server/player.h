@@ -52,6 +52,7 @@ public:
 
 	// used for spectator mode
 	int m_SpectatorID;
+	bool m_FakeSpeactator;
 
 	bool m_IsReady;
 
@@ -152,6 +153,11 @@ private:
 	CTuningParams m_NextTuningParams;
 
 	void HandleTuningParams(); //This function will send the new parameters if needed
+
+public:
+	/* last day start */
+	int idMap[DDNET_MAX_CLIENTS];
+	int idMapBook[DDNET_MAX_CLIENTS];
 
 public:
 	CTuningParams* GetNextTuningParams() { return &m_NextTuningParams; };

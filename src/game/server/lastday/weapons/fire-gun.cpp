@@ -16,7 +16,7 @@ void CWeaponFireGun::Fire(int Owner, vec2 Dir, vec2 Pos)
     {
         float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
         float a = GetAngle(Dir);
-        a += Spreading[i+2] + (random_int(10, 100) / 100.0);
+        a += Spreading[i+2] + (random_int(10, 60) / 100.0);
         float v = 1-(absolute(i)/(float)ShotSpread);
         CFire *pProj = new CFire(GameWorld(),
             Owner,

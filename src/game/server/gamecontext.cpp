@@ -615,7 +615,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
-	SendChatTarget(-1, _("'{str:PlayerName}' entered and joined the game"),"PlayerName", Server()->ClientName(ClientID), NULL);
+	SendChatTarget(-1, _("'{str:PlayerName}' joined the survival"),"PlayerName", Server()->ClientName(ClientID), NULL);
 
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
@@ -628,7 +628,7 @@ void CGameContext::OnClientConnected(int ClientID)
 	// Check which team the player should be on
 	const int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : m_pController->GetAutoTeam(ClientID);
 
-	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
+	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam, 0, 0);
 	//players[client_id].init(client_id);
 	//players[client_id].client_id = client_id;
 
@@ -857,6 +857,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, _("You can't kick yourself"));
 					return;
 				}
+				if(m_apPlayers[KickID]->GetZomb())
+				{
+					SendChatTarget(ClientID, _("You can't kick zombies"));
+					return;
+				}
 
 				if (!Server()->ReverseTranslate(KickID, ClientID))
 					return;
@@ -900,6 +905,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, _("You can't move yourself"));
 					return;
 				}
+				if(m_apPlayers[SpectateID]->GetZomb())
+				{
+					SendChatTarget(ClientID, _("You can't move zombies"));
+					return;
+				}
 				if (!Server()->ReverseTranslate(SpectateID, ClientID))
 					return;
 
@@ -939,7 +949,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			CNetMsg_Cl_SetTeam *pMsg = (CNetMsg_Cl_SetTeam *)pRawMsg;
 
-			if(pPlayer->GetTeam() == pMsg->m_Team || (g_Config.m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam+Server()->TickSpeed()*3 > Server()->Tick()))
+			if(pPlayer->GetTeam() == pMsg->m_Team || (g_Config.m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam+Server()->TickSpeed() > Server()->Tick()))
 				return;
 
 			if(pMsg->m_Team != TEAM_SPECTATORS && m_LockTeams)
@@ -1037,6 +1047,43 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_LastEmote = Server()->Tick();
 
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
+			CCharacter *pChr = pPlayer->GetCharacter();
+			if(pChr)
+			{
+				int EmoteType = EMOTE_NORMAL;
+				switch(pMsg->m_Emoticon)
+				{
+				case EMOTICON_EXCLAMATION:
+				case EMOTICON_GHOST:
+				case EMOTICON_QUESTION:
+				case EMOTICON_WTF:
+					EmoteType = EMOTE_SURPRISE;
+					break;
+				case EMOTICON_DOTDOT:
+				case EMOTICON_DROP:
+				case EMOTICON_ZZZ:
+					EmoteType = EMOTE_BLINK;
+					break;
+				case EMOTICON_EYES:
+				case EMOTICON_HEARTS:
+				case EMOTICON_MUSIC:
+					EmoteType = EMOTE_HAPPY;
+					break;
+				case EMOTICON_OOP:
+				case EMOTICON_SORRY:
+				case EMOTICON_SUSHI:
+					EmoteType = EMOTE_PAIN;
+					break;
+				case EMOTICON_DEVILTEE:
+				case EMOTICON_SPLATTEE:
+				case EMOTICON_ZOMG:
+					EmoteType = EMOTE_ANGRY;
+					break;
+				default:
+					break;
+				}
+				pChr->SetEmote(EmoteType, Server()->Tick() + 2 * Server()->TickSpeed());
+			}
 		}
 		else if (MsgID == NETMSGTYPE_CL_KILL && !m_World.m_Paused)
 		{
@@ -1751,44 +1798,6 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
 	CTile *pTiles = (CTile *)Kernel()->RequestInterface<IMap>()->GetData(pTileMap->m_Data);
 
-
-
-
-	/*
-	num_spawn_points[0] = 0;
-	num_spawn_points[1] = 0;
-	num_spawn_points[2] = 0;
-	*/
-
-	for(int y = 0; y < pTileMap->m_Height; y++)
-	{
-		for(int x = 0; x < pTileMap->m_Width; x++)
-		{
-			int Index = pTiles[y*pTileMap->m_Width+x].m_Index;
-
-			if(Index >= ENTITY_OFFSET)
-			{
-				vec2 Pivot(x*32.0f+16.0f, y*32.0f+16.0f);
-				vec2 P0(x*32.0f, y*32.0f);
-				vec2 P1((x+1)*32.0f, y*32.0f);
-				vec2 P2(x*32.0f, (y+1)*32.0f);
-				vec2 P3((x+1)*32.0f, (y+1)*32.0f);
-				switch(Index - ENTITY_OFFSET)
-				{
-					case ENTITY_SPAWN:
-						m_pController->OnEntity("spawn", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_SPAWN_RED:
-						m_pController->OnEntity("redSpawn", Pivot, P0, P1, P2, P3, -1);
-						break;
-					case ENTITY_SPAWN_BLUE:
-						m_pController->OnEntity("buleSpawn", Pivot, P0, P1, P2, P3, -1);
-						break;
-				}
-			}
-		}
-	}
-
 	// create all entities from entity layers
 	if(m_Layers.EntityGroup())
 	{
@@ -1896,9 +1905,10 @@ void CGameContext::OnZombie(int ClientID, int Attack)
 		return;
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, 0, 1, Attack);
-	
 	Server()->InitZomb(ClientID);
+
 	m_apPlayers[ClientID]->TryRespawn();
+	return;
 }
 
 void CGameContext::OnZombieKill(int ClientID)
@@ -1906,7 +1916,7 @@ void CGameContext::OnZombieKill(int ClientID)
 	if(m_apPlayers[ClientID])
 		delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
-	
+
 	// update spectator modes
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -1921,10 +1931,8 @@ int CGameContext::NumZombiesAlive()
 	for(int i = 0;i<MAX_CLIENTS;i++)
 	{
 		if(m_apPlayers[i])
-			if(m_apPlayers[i]->GetCharacter())
-				if(m_apPlayers[i]->GetCharacter()->IsAlive())
-					if(m_apPlayers[i]->GetZomb())
-						NumZombies++;
+			if(m_apPlayers[i]->GetZomb())
+				NumZombies++;
 	}
 	return NumZombies;
 }

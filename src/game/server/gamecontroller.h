@@ -29,26 +29,7 @@ class IGameController
 protected:
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const { return m_pServer; }
-	array<vec2> m_aaSpawnPoints[3];
-
-	struct CSpawnEval
-	{
-		CSpawnEval()
-		{
-			m_Got = false;
-			m_FriendlyTeam = -1;
-			m_Pos = vec2(100,100);
-		}
-
-		vec2 m_Pos;
-		bool m_Got;
-		int m_FriendlyTeam;
-		float m_Score;
-	};
-
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type);
-	bool EvaluateSpawn(class CPlayer *pP, vec2 *pPos);
+	array<vec2> m_aSpawnPoints[2];
 
 	void CycleMap();
 	void ResetGame();
@@ -140,7 +121,7 @@ public:
 	virtual void OnPlayerInfoChange(class CPlayer *pP);
 
 	//
-	virtual bool CanSpawn(int Team, vec2 *pPos);
+	virtual bool GetSpawn(vec2 *pPos, int Zomb);
 
 	/*
 
@@ -155,8 +136,6 @@ public:
 	virtual void PostReset();
 
 	double GetTime();
-	//Zomb2
-	virtual void CheckZombie();
 };
 
 #endif

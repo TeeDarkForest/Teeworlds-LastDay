@@ -307,7 +307,7 @@ void CGameWorld::UpdatePlayerMaps()
 	}
 }
 
-CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis)
+CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis, bool IgnoreCollide, bool Zomb)
 {
 	// Find other players
 	float ClosestRange = Radius*2;
@@ -318,6 +318,14 @@ CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotTh
  	{
 		if(p == pNotThis)
 			continue;
+		if(Zomb && p->GetPlayer()->GetZomb())
+			continue;
+
+        if(!IgnoreCollide)
+        {
+            if(GameServer()->Collision()->IntersectLine2(Pos, p->m_Pos))
+                continue;
+        }
 
 		float Len = distance(Pos, p->m_Pos);
 		if(Len < p->m_ProximityRadius+Radius)

@@ -217,6 +217,7 @@ public:
 	int m_FreezeState;
 
 	int m_Jumped;
+	bool m_Zomb;
 
 	int m_Direction;
 	int m_Angle;

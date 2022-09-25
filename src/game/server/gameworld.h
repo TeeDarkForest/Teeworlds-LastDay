@@ -25,6 +25,7 @@ public:
 		ENTTYPE_CHARACTER,
 
 		ENTTYPE_FIRE,
+		ENTTYPE_RAIN,
 		NUM_ENTTYPES
 	};
 
@@ -96,11 +97,12 @@ public:
 			pos - The center position.
 			radius - How far off the CCharacter is allowed to be
 			notthis - Entity to ignore
+			Zomb - The Zomb Mode
 
 		Returns:
 			Returns a pointer to the closest CCharacter or NULL if no CCharacter is close enough.
 	*/
-	class CCharacter *ClosestCharacter(vec2 Pos, float Radius, CEntity *ppNotThis);
+	class CCharacter *ClosestCharacter(vec2 Pos, float Radius, CEntity *ppNotThis, bool IgnoreCollide=true, bool Zomb=0);
 
 	/*
 		Function: insert_entity

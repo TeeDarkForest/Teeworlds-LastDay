@@ -320,19 +320,6 @@ void CCharacterCore::Tick(bool UseInput, CParams* pParams)
 			// handle player <-> player collision
 			float Distance = distance(m_Pos, pCharCore->m_Pos);
 			vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
-			if(pTuningParams->m_PlayerCollision && Distance < PhysSize*1.25f && Distance > 0.0f)
-			{
-				float a = (PhysSize*1.45f - Distance);
-				float Velocity = 0.5f;
-
-				// make sure that we don't add excess force by checking the
-				// direction against the current velocity. if not zero.
-				if (length(m_Vel) > 0.0001)
-					Velocity = 1-(dot(normalize(m_Vel), Dir)+1)/2;
-
-				m_Vel += Dir*a*(Velocity*0.75f);
-				m_Vel *= 0.85f;
-			}
 
 			// handle hook influence
 			if(m_HookedPlayer == i && pTuningParams->m_PlayerHooking)
@@ -350,6 +337,21 @@ void CCharacterCore::Tick(bool UseInput, CParams* pParams)
 					m_Vel.x = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.x, -Accel*Dir.x*0.25f);
 					m_Vel.y = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.y, -Accel*Dir.y*0.25f);
 				}
+			}
+			
+			// handle player <-> player collision
+			if(pTuningParams->m_PlayerCollision && Distance < PhysSize*1.25f && Distance > 0.0f)
+			{
+				float a = (PhysSize*1.45f - Distance);
+				float Velocity = 0.5f;
+
+				// make sure that we don't add excess force by checking the
+				// direction against the current velocity. if not zero.
+				if (length(m_Vel) > 0.0001)
+					Velocity = 1-(dot(normalize(m_Vel), Dir)+1)/2;
+
+				m_Vel += Dir*a*(Velocity*0.75f);
+				m_Vel *= 0.85f;
 			}
 		}
 	}

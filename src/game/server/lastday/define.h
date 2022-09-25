@@ -16,5 +16,10 @@ enum LastDayWeapon
     NUM_LD_WEAPONS,
 };
 
+enum FreezeReason
+{
+	FREEZEREASON_FREEZE_ZONE=0,
+	FREEZEREASON_TOO_COLD
+};
 
 #endif

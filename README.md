@@ -1,22 +1,51 @@
 Teeworlds - Last Day
 =========
 
-A hard core teeworlds survival mod.
+English version
+=========
 
-Only a PVPVE mod.
+#### A hard core teeworlds survival mod.
 
-SURVIVAL OR DIE！！！！！！
+#### Only a PVPVE mod.
 
-_Last Day._
+before building you should install `bam 0.5` build tool.
 
-_The end day._
+> :exclamation: don't use `bam 0.4`
 
-一个硬核向的teeworlds生存模式
+> ## _"NATURAL SELECTION,_
+> ## _SURVIVAL OR DIE"._
+> ## _-------nameless tee_
+***
 
-仅是PVPVE模式.
+## Thanks
+***
+InfectionDust Organization
 
-生或死！
+fstd
 
-_最后一日._
+AssassinTee
 
-_即是末日._
+中文版本
+=========
+
+#### 一个硬核向的teeworlds生存模式
+
+#### 只是PVPVE模式.
+
+在构建前请安装 `bam 0.5` 构建工具.
+
+> :exclamation: 别用 `bam 0.4`
+
+***
+
+> ## _"自然选择,_
+> ## _非死即生."_
+> ## _-------nameless tee_
+
+## 感谢名单
+***
+InfectionDust组织
+
+fstd
+
+AssassinTee
