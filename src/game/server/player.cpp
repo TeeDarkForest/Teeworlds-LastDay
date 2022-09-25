@@ -155,18 +155,16 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 	
 	int id = -1;
-	if(SnappingClient != m_ClientID)
+	int* idMap = GameServer()->m_apPlayers[SnappingClient]->idMap;
+	for (int i = 0;i < DDNET_MAX_CLIENTS;i++)
 	{
-		int* idMap = GameServer()->m_apPlayers[SnappingClient]->idMap;
-		for (int i = 0;i < DDNET_MAX_CLIENTS;i++)
+		if (idMap[i] == m_ClientID)
 		{
-			if (idMap[i] == m_ClientID)
-			{
-				id = i;
-				break;
-			}
+			id = i;
+			break;
 		}
-	}else id = m_ClientID;
+	}
+	
 	if (id == -1)
 		return;
 	
