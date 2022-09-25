@@ -282,36 +282,47 @@ void CGameContext::SendChatTarget(int To, const char *pText, ...)
 
 void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText)
 {
-	char aBuf[256];
-	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
-	else
-		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team!=CHAT_ALL?"teamchat":"chat", aBuf);
+	char aBuf[268];
+	char nText[300];
 
-	if(Team == CHAT_ALL)
+	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
 	{
-		CNetMsg_Sv_Chat Msg;
-		Msg.m_Team = 0;
-		Msg.m_ClientID = ChatterClientID;
-		Msg.m_pMessage = pText;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
+		str_format(nText, sizeof(aBuf), "%s: %s", Server()->ClientName(ChatterClientID), pText);
 	}
 	else
+		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
+	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "chat", aBuf);
+
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Team = Team != CHAT_ALL;
+	Msg.m_ClientID = ChatterClientID;
+	Msg.m_pMessage = pText;
+
+	// pack one for the recording only
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
+
+	// send to the clients
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		CNetMsg_Sv_Chat Msg;
-		Msg.m_Team = 1;
-		Msg.m_ClientID = ChatterClientID;
-		Msg.m_pMessage = pText;
-
-		// pack one for the recording only
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
-
-		// send to the clients
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		if(!m_apPlayers[i] || (m_apPlayers[i]->GetTeam() != Team && Team != CHAT_ALL)) continue;
+		int found = 0;
+		if (ChatterClientID >= 0)
+			for (int j = 0;j < 16;j++)
+				if (m_apPlayers[i]->idMap[j] == ChatterClientID)
+				{
+					Msg.m_pMessage = pText;
+					Msg.m_ClientID = j;
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+					found = 1;
+					break;
+				}
+		if (!found)
 		{
-			if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() == Team)
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+			if (ChatterClientID >= 0) Msg.m_pMessage = nText;
+			else Msg.m_pMessage = pText;
+			Msg.m_ClientID = -1;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
 		}
 	}
 }
@@ -321,7 +332,17 @@ void CGameContext::SendEmoticon(int ClientID, int Emoticon)
 	CNetMsg_Sv_Emoticon Msg;
 	Msg.m_ClientID = ClientID;
 	Msg.m_Emoticon = Emoticon;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	if (Server()->ClientIngame(i))
+	{
+		for (int j = 0;j < 16;j++)
+			if (m_apPlayers[i]->idMap[j] == ClientID)
+			{
+				Msg.m_ClientID = j;
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+				break;
+			}
+	}
 }
 
 void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
@@ -590,7 +611,6 @@ void CGameContext::OnTick()
 		{
 			CNetObj_PlayerInput Input = {0};
 			Input.m_Direction = (i&1)?-1:1;
-			m_apPlayers[MAX_CLIENTS-i-1]->OnPredictedInput(&Input);
 		}
 	}
 #endif
